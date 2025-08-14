@@ -1,14 +1,46 @@
 import apn from "apn";
 import dotenv from "dotenv";
+import fs from "fs";
 dotenv.config();
+
+// Helper function to get APN key content
+function getApnKeyContent(): string {
+  // Option 1: Use base64 encoded key from environment variable (recommended for cloud deployment)
+  if (process.env.APN_KEY_CONTENT) {
+    try {
+      return Buffer.from(process.env.APN_KEY_CONTENT, "base64").toString(
+        "utf8",
+      );
+    } catch (error) {
+      throw new Error(
+        "Invalid APN_KEY_CONTENT: must be valid base64 encoded .p8 file content",
+      );
+    }
+  }
+
+  // Option 2: Use file path (for local development)
+  if (process.env.APN_KEY_PATH) {
+    try {
+      return fs.readFileSync(process.env.APN_KEY_PATH, "utf8");
+    } catch (error) {
+      throw new Error(
+        `Failed to read APN key file at ${process.env.APN_KEY_PATH}: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  throw new Error(
+    "Either APN_KEY_CONTENT (base64) or APN_KEY_PATH must be provided",
+  );
+}
 
 export const apnProvider = new apn.Provider({
   token: {
-    key: process.env.APN_KEY_PATH!,
+    key: getApnKeyContent(),
     keyId: process.env.APN_KEY_ID!,
     teamId: process.env.APN_TEAM_ID!,
   },
-  production: false,
+  production: process.env.NODE_ENV === "production",
 });
 
 export async function sendAPNsBatch(
@@ -41,7 +73,7 @@ export async function sendAPNsBatch(
     const results = await Promise.all(
       tokens.map(async (token, index) => {
         try {
-          if (!token || typeof token !== 'string') {
+          if (!token || typeof token !== "string") {
             console.warn(`Invalid token at index ${index}:`, token);
             return { failed: [{ status: "400", device: token }] };
           }
@@ -51,7 +83,7 @@ export async function sendAPNsBatch(
           console.error(`Error sending to token ${token}:`, error);
           return { failed: [{ status: "500", device: token }] };
         }
-      })
+      }),
     );
 
     const invalidTokens: string[] = [];
@@ -65,9 +97,13 @@ export async function sendAPNsBatch(
           // 403 = Forbidden (certificate/auth issues)
           if (fail.status === "410" || fail.status === "400") {
             invalidTokens.push(tokens[i]);
-            console.log(`Invalid token detected (${fail.status}): ${tokens[i]}`);
+            console.log(
+              `Invalid token detected (${fail.status}): ${tokens[i]}`,
+            );
           } else {
-            console.warn(`APNs delivery failed for token ${tokens[i]} with status ${fail.status}`);
+            console.warn(
+              `APNs delivery failed for token ${tokens[i]} with status ${fail.status}`,
+            );
           }
         });
       } else {
@@ -75,9 +111,10 @@ export async function sendAPNsBatch(
       }
     });
 
-    console.log(`APNs batch completed: ${successCount} successful, ${invalidTokens.length} invalid tokens`);
+    console.log(
+      `APNs batch completed: ${successCount} successful, ${invalidTokens.length} invalid tokens`,
+    );
     return invalidTokens;
-
   } catch (error) {
     console.error("Error in sendAPNsBatch:", error);
     throw new Error(`Failed to send APNs batch: ${(error as Error).message}`);

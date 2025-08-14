@@ -28,8 +28,12 @@ const worker = new Worker(
       }
 
       console.log(`Processing ${tokens.length} tokens with payload:`, {
-        title: payload.title.substring(0, 50) + (payload.title.length > 50 ? '...' : ''),
-        text: payload.text.substring(0, 50) + (payload.text.length > 50 ? '...' : '')
+        title:
+          payload.title.substring(0, 50) +
+          (payload.title.length > 50 ? "..." : ""),
+        text:
+          payload.text.substring(0, 50) +
+          (payload.text.length > 50 ? "..." : ""),
       });
 
       const invalidTokensTotal: string[] = [];
@@ -40,14 +44,21 @@ const worker = new Worker(
         const batch = tokens.slice(i, i + batchSize);
 
         try {
-          const invalidTokens = await limit(() => sendAPNsBatch(batch, payload));
+          const invalidTokens = await limit(() =>
+            sendAPNsBatch(batch, payload),
+          );
           invalidTokensTotal.push(...invalidTokens);
           successfulBatches++;
 
-          console.log(`Batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(tokens.length / batchSize)} completed - ${invalidTokens.length} invalid tokens found`);
+          console.log(
+            `Batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(tokens.length / batchSize)} completed - ${invalidTokens.length} invalid tokens found`,
+          );
         } catch (batchError) {
           failedBatches++;
-          console.error(`Batch ${Math.floor(i / batchSize) + 1} failed:`, batchError);
+          console.error(
+            `Batch ${Math.floor(i / batchSize) + 1} failed:`,
+            batchError,
+          );
           // Continue processing other batches instead of failing the entire job
         }
       }
@@ -59,7 +70,7 @@ const worker = new Worker(
         totalTokens: tokens.length,
         successfulBatches,
         failedBatches,
-        invalidTokens: invalidTokensTotal.length
+        invalidTokens: invalidTokensTotal.length,
       };
 
       console.log(`Job ${job.id} completed:`, summary);
@@ -70,7 +81,6 @@ const worker = new Worker(
       }
 
       return summary;
-
     } catch (error) {
       console.error(`Job ${job.id} failed:`, error);
       throw error; // Re-throw to mark job as failed
@@ -80,7 +90,7 @@ const worker = new Worker(
     connection,
     concurrency: 3, // Process up to 3 jobs concurrently
     removeOnComplete: { count: 100 }, // Keep last 100 completed jobs
-    removeOnFail: { count: 50 } // Keep last 50 failed jobs for debugging
+    removeOnFail: { count: 50 }, // Keep last 50 failed jobs for debugging
   },
 );
 
@@ -97,14 +107,14 @@ worker.on("error", (err) => {
 });
 
 // Graceful shutdown handling
-process.on('SIGTERM', async () => {
-  console.log('SIGTERM received, shutting down worker gracefully...');
+process.on("SIGTERM", async () => {
+  console.log("SIGTERM received, shutting down worker gracefully...");
   await worker.close();
   process.exit(0);
 });
 
-process.on('SIGINT', async () => {
-  console.log('SIGINT received, shutting down worker gracefully...');
+process.on("SIGINT", async () => {
+  console.log("SIGINT received, shutting down worker gracefully...");
   await worker.close();
   process.exit(0);
 });

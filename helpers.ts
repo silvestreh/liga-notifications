@@ -35,9 +35,12 @@ export function groupTokensByLocale(
       grouped[lang].push(t.token);
     });
 
-    console.log("Tokens grouped by locale:", Object.keys(grouped).map(locale =>
-      `${locale}: ${grouped[locale].length}`
-    ));
+    console.log(
+      "Tokens grouped by locale:",
+      Object.keys(grouped).map(
+        (locale) => `${locale}: ${grouped[locale].length}`,
+      ),
+    );
 
     return grouped;
   } catch (error) {
@@ -50,14 +53,16 @@ export function generatePayload(
   localesContent: Record<string, { title: string; text: string }>,
 ) {
   try {
-    if (!localesContent || typeof localesContent !== 'object') {
+    if (!localesContent || typeof localesContent !== "object") {
       throw new Error("Locales content must be an object");
     }
 
     // Validate structure
     for (const [locale, content] of Object.entries(localesContent)) {
       if (!content || !content.title || !content.text) {
-        throw new Error(`Invalid content for locale ${locale}: must have title and text`);
+        throw new Error(
+          `Invalid content for locale ${locale}: must have title and text`,
+        );
       }
     }
 
@@ -79,9 +84,13 @@ export async function removeInvalidTokens(tokens: string[]): Promise<void> {
       throw new Error("Tokens must be an array");
     }
 
-    const validTokens = tokens.filter(token => typeof token === 'string' && token.length > 0);
+    const validTokens = tokens.filter(
+      (token) => typeof token === "string" && token.length > 0,
+    );
     if (validTokens.length !== tokens.length) {
-      console.warn(`Filtered out ${tokens.length - validTokens.length} invalid token entries`);
+      console.warn(
+        `Filtered out ${tokens.length - validTokens.length} invalid token entries`,
+      );
     }
 
     if (validTokens.length === 0) {

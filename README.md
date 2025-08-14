@@ -26,6 +26,7 @@ NODE_ENV=development
 ## API Authentication
 
 Include your API key in requests using either:
+
 - Header: `X-API-Key: your-secret-api-key-here`
 - Header: `Authorization: Bearer your-secret-api-key-here`
 
@@ -50,6 +51,7 @@ Include your API key in requests using either:
 ```
 
 **Response:**
+
 ```json
 {
   "message": "Push notification jobs queued successfully",
@@ -62,6 +64,7 @@ Include your API key in requests using either:
 ## Running the Services
 
 1. **Start the API server:**
+
    ```bash
    npm start
    ```

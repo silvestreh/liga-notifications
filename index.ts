@@ -13,17 +13,23 @@ const app = express();
 app.use(express.json());
 
 // API Key Authentication Middleware
-const authenticateApiKey = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
+const authenticateApiKey = (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+) => {
+  const apiKey =
+    req.headers["x-api-key"] ||
+    req.headers["authorization"]?.replace("Bearer ", "");
   const validApiKey = process.env.API_KEY;
 
   if (!validApiKey) {
-    console.error('API_KEY environment variable not set');
-    return res.status(500).json({ error: 'Server configuration error' });
+    console.error("API_KEY environment variable not set");
+    return res.status(500).json({ error: "Server configuration error" });
   }
 
   if (!apiKey || apiKey !== validApiKey) {
-    return res.status(401).json({ error: 'Invalid or missing API key' });
+    return res.status(401).json({ error: "Invalid or missing API key" });
   }
 
   next();
@@ -46,26 +52,36 @@ app.post("/send-push", authenticateApiKey, async (req, res) => {
       return res.status(400).json({ error: "tags must be a non-empty array" });
     }
 
-    if (!localesContent || typeof localesContent !== 'object') {
-      return res.status(400).json({ error: "localesContent must be an object" });
+    if (!localesContent || typeof localesContent !== "object") {
+      return res
+        .status(400)
+        .json({ error: "localesContent must be an object" });
     }
 
     // Validate localesContent structure
     for (const [locale, content] of Object.entries(localesContent)) {
-      if (!content || typeof content !== 'object' || !content.title || !content.text) {
+      if (
+        !content ||
+        typeof content !== "object" ||
+        !content.title ||
+        !content.text
+      ) {
         return res.status(400).json({
-          error: `localesContent.${locale} must have title and text properties`
+          error: `localesContent.${locale} must have title and text properties`,
         });
       }
-      if (typeof content.title !== 'string' || typeof content.text !== 'string') {
+      if (
+        typeof content.title !== "string" ||
+        typeof content.text !== "string"
+      ) {
         return res.status(400).json({
-          error: `localesContent.${locale}.title and text must be strings`
+          error: `localesContent.${locale}.title and text must be strings`,
         });
       }
     }
 
     // Validate tags are strings
-    if (!tags.every(tag => typeof tag === 'string')) {
+    if (!tags.every((tag) => typeof tag === "string")) {
       return res.status(400).json({ error: "All tags must be strings" });
     }
 
@@ -74,7 +90,7 @@ app.post("/send-push", authenticateApiKey, async (req, res) => {
     if (tokens.length === 0) {
       return res.json({
         message: "No devices found for the specified tags",
-        totalUsers: 0
+        totalUsers: 0,
       });
     }
 
@@ -90,7 +106,9 @@ app.post("/send-push", authenticateApiKey, async (req, res) => {
         });
         jobsAdded++;
       } else {
-        console.warn(`No content provided for locale: ${locale}, skipping ${tokensList.length} tokens`);
+        console.warn(
+          `No content provided for locale: ${locale}, skipping ${tokensList.length} tokens`,
+        );
       }
     }
 
@@ -98,70 +116,74 @@ app.post("/send-push", authenticateApiKey, async (req, res) => {
       message: "Push notification jobs queued successfully",
       totalUsers: tokens.length,
       jobsAdded,
-      locales: Object.keys(groupedTokens)
+      locales: Object.keys(groupedTokens),
     });
-
   } catch (error) {
     console.error("Error in /send-push:", error);
     res.status(500).json({
       error: "Internal server error",
-      message: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+      message:
+        process.env.NODE_ENV === "development"
+          ? (error as Error).message
+          : undefined,
     });
   }
 });
 
-const server = app.listen(3000, () => console.log("🚀 Server running on http://localhost:3000"));
+const server = app.listen(3000, () =>
+  console.log("🚀 Server running on http://localhost:3000"),
+);
 
 // Graceful shutdown handling
-process.on('SIGTERM', async () => {
-  console.log('SIGTERM received, shutting down server gracefully...');
+process.on("SIGTERM", async () => {
+  console.log("SIGTERM received, shutting down server gracefully...");
 
   server.close(async () => {
-    console.log('HTTP server closed');
+    console.log("HTTP server closed");
 
     try {
       await mongoose.connection.close();
-      console.log('MongoDB connection closed');
+      console.log("MongoDB connection closed");
 
       await pushQueue.close();
-      console.log('Push queue closed');
+      console.log("Push queue closed");
 
       process.exit(0);
     } catch (error) {
-      console.error('Error during graceful shutdown:', error);
+      console.error("Error during graceful shutdown:", error);
       process.exit(1);
     }
   });
 });
 
-process.on('SIGINT', async () => {
-  console.log('SIGINT received, shutting down server gracefully...');
+process.on("SIGINT", async () => {
+  console.log("SIGINT received, shutting down server gracefully...");
 
   server.close(async () => {
-    console.log('HTTP server closed');
+    console.log("HTTP server closed");
 
     try {
       await mongoose.connection.close();
-      console.log('MongoDB connection closed');
+      console.log("MongoDB connection closed");
 
       await pushQueue.close();
-      console.log('Push queue closed');
+      console.log("Push queue closed");
 
       process.exit(0);
     } catch (error) {
-      console.error('Error during graceful shutdown:', error);
+      console.error("Error during graceful shutdown:", error);
       process.exit(1);
     }
   });
 });
 
 // Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught Exception:", error);
   process.exit(1);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection at:", promise, "reason:", reason);
   process.exit(1);
 });
