@@ -4,8 +4,13 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "worker": "node workers.js"
+    "build": "tsc",
+    "start": "npm run build && node dist/index.js",
+    "worker": "npm run build && node dist/workers.js",
+    "dev": "tsc && node dist/index.js",
+    "dev:worker": "tsc && node dist/workers.js",
+    "dev:watch": "tsc --watch",
+    "clean": "rm -rf dist"
   },
   "dependencies": {
     "apn": "^2.2.0",
@@ -18,6 +23,7 @@
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
-    "@types/node": "^24.2.1"
+    "@types/node": "^24.2.1",
+    "typescript": "^5.0.0"
   }
 }
