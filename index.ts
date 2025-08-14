@@ -2,132 +2,65 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import { pushQueue } from "./queue.js";
-import {
-  getTokensByTags,
-  groupTokensByLocale,
-  generatePayload,
-} from "./helpers.js";
+import { authenticateApiKey } from "./middleware/auth.js";
+import pushRoutes from "./routes/push-routes.js";
+import tokenRoutes from "./routes/token-routes.js";
 dotenv.config();
+
+// MongoDB connection event logging
+mongoose.connection.on("connecting", () => {
+  console.log("📡 MongoDB: attempting connection to", process.env.MONGO_URI);
+});
+
+mongoose.connection.on("connected", () => {
+  console.log("✅ MongoDB: connection established");
+});
+
+mongoose.connection.on("error", (err) => {
+  console.error("❌ MongoDB: connection error", err);
+});
+
+mongoose.connection.on("disconnected", () => {
+  console.warn("⚠️  MongoDB: disconnected");
+});
+
+mongoose.connection.on("reconnected", () => {
+  console.log("🔄 MongoDB: reconnected");
+});
+
 
 const app = express();
 app.use(express.json());
 
-// API Key Authentication Middleware
-const authenticateApiKey = (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
-) => {
-  const apiKey =
-    req.headers["x-api-key"] ||
-    req.headers["authorization"]?.replace("Bearer ", "");
-  const validApiKey = process.env.API_KEY;
-
-  if (!validApiKey) {
-    console.error("API_KEY environment variable not set");
-    return res.status(500).json({ error: "Server configuration error" });
-  }
-
-  if (!apiKey || apiKey !== validApiKey) {
-    return res.status(401).json({ error: "Invalid or missing API key" });
-  }
-
-  next();
-};
-
 mongoose
   .connect(process.env.MONGO_URI!)
-  .then(() => console.log("MongoDB connected"))
   .catch(console.error);
 
-app.post("/send-push", authenticateApiKey, async (req, res) => {
-  try {
-    const { tags, localesContent } = req.body as {
-      tags: string[];
-      localesContent: Record<string, { title: string; text: string }>;
-    };
+// Mount routes
+app.use("/", tokenRoutes); // Token routes (register is public, token lookup requires auth)
+app.use("/", authenticateApiKey, pushRoutes); // Push routes (all require authentication)
 
-    // Input validation
-    if (!tags || !Array.isArray(tags) || tags.length === 0) {
-      return res.status(400).json({ error: "tags must be a non-empty array" });
+// Health check endpoint (no auth required)
+app.get("/health", (req, res) => {
+  res.json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
+// Root endpoint
+app.get("/", (req, res) => {
+  res.json({
+    service: "Push Notification Service",
+    version: "1.0.0",
+    endpoints: {
+      "POST /register": "Register device token (no auth)",
+      "GET /token/:id": "Get token info (auth required)",
+      "POST /send-push": "Send push notifications (auth required)",
+      "GET /health": "Health check (no auth)"
     }
-
-    if (!localesContent || typeof localesContent !== "object") {
-      return res
-        .status(400)
-        .json({ error: "localesContent must be an object" });
-    }
-
-    // Validate localesContent structure
-    for (const [locale, content] of Object.entries(localesContent)) {
-      if (
-        !content ||
-        typeof content !== "object" ||
-        !content.title ||
-        !content.text
-      ) {
-        return res.status(400).json({
-          error: `localesContent.${locale} must have title and text properties`,
-        });
-      }
-      if (
-        typeof content.title !== "string" ||
-        typeof content.text !== "string"
-      ) {
-        return res.status(400).json({
-          error: `localesContent.${locale}.title and text must be strings`,
-        });
-      }
-    }
-
-    // Validate tags are strings
-    if (!tags.every((tag) => typeof tag === "string")) {
-      return res.status(400).json({ error: "All tags must be strings" });
-    }
-
-    const tokens = await getTokensByTags(tags);
-
-    if (tokens.length === 0) {
-      return res.json({
-        message: "No devices found for the specified tags",
-        totalUsers: 0,
-      });
-    }
-
-    const groupedTokens = groupTokensByLocale(tokens);
-    const payload = generatePayload(localesContent);
-
-    let jobsAdded = 0;
-    for (const [locale, tokensList] of Object.entries(groupedTokens)) {
-      if (payload.locales[locale]) {
-        await pushQueue.add("sendPush", {
-          tokens: tokensList,
-          payload: payload.locales[locale],
-        });
-        jobsAdded++;
-      } else {
-        console.warn(
-          `No content provided for locale: ${locale}, skipping ${tokensList.length} tokens`,
-        );
-      }
-    }
-
-    res.json({
-      message: "Push notification jobs queued successfully",
-      totalUsers: tokens.length,
-      jobsAdded,
-      locales: Object.keys(groupedTokens),
-    });
-  } catch (error) {
-    console.error("Error in /send-push:", error);
-    res.status(500).json({
-      error: "Internal server error",
-      message:
-        process.env.NODE_ENV === "development"
-          ? (error as Error).message
-          : undefined,
-    });
-  }
+  });
 });
 
 const server = app.listen(3000, () =>

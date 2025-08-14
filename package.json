@@ -7,10 +7,14 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "worker": "node dist/workers.js",
-    "dev": "tsc && node dist/index.js",
-    "dev:worker": "tsc && node dist/workers.js",
+    "dev": "tsc && nodemon dist/index.js",
+    "dev:worker": "tsc && nodemon dist/workers.js",
     "dev:watch": "tsc --watch",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:verbose": "jest --verbose"
   },
   "dependencies": {
     "apn": "^2.2.0",
@@ -23,7 +27,14 @@
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
+    "@types/jest": "^30.0.0",
     "@types/node": "^24.2.1",
+    "@types/supertest": "^6.0.3",
+    "jest": "^30.0.5",
+    "mongodb-memory-server": "^10.2.0",
+    "nodemon": "^3.1.10",
+    "supertest": "^7.1.4",
+    "ts-jest": "^29.4.1",
     "typescript": "^5.0.0"
   }
 }
