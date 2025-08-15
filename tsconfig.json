@@ -18,7 +18,8 @@
   },
   "include": [
     "*.ts",
-    "models/*.ts"
+    "models/*.ts",
+    "types/**/*.d.ts"
   ],
   "exclude": [
     "node_modules",

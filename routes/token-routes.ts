@@ -1,5 +1,7 @@
 import { Router, Request, Response } from "express";
 import { authenticateApiKey } from "../middleware/auth.js";
+import jwt from "jsonwebtoken";
+import { authenticateDevice } from "../middleware/device-auth.js";
 
 const router = Router();
 
@@ -56,6 +58,17 @@ router.post("/register", async (req: Request, res: Response) => {
 
     console.log(`Token registered/updated: ${token.substring(0, 10)}... with tags: [${(tags || []).join(', ')}]`);
 
+    const deviceSecret = process.env.DEVICE_SECRET;
+    if (!deviceSecret) {
+      console.error("DEVICE_SECRET not set. Skipping auth token generation.");
+    }
+
+    const authToken = deviceSecret
+      ? jwt.sign({ token: token.trim() }, deviceSecret, {
+          expiresIn: "365d",
+        })
+      : undefined;
+
     res.json({
       message: "Device token registered successfully",
       token: {
@@ -63,8 +76,9 @@ router.post("/register", async (req: Request, res: Response) => {
         platform: tokenData.platform,
         tags: tokenData.tags,
         locale: tokenData.locale,
-        lastActive: tokenData.lastActive
-      }
+        lastActive: tokenData.lastActive,
+      },
+      authToken,
     });
 
   } catch (error) {
@@ -119,6 +133,71 @@ router.get("/token/:tokenId", authenticateApiKey, async (req: Request, res: Resp
     res.status(500).json({
       error: "Internal server error",
       message: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+    });
+  }
+});
+
+// NEW: Update token tags using device auth token (no API key required)
+router.patch("/token", authenticateDevice, async (req: Request, res: Response) => {
+  try {
+    const deviceToken = (req as any).deviceToken as string | undefined;
+    if (!deviceToken) {
+      return res.status(401).json({ error: "Unauthenticated" });
+    }
+
+    const { tagsToAdd, tagsToRemove } = req.body as {
+      tagsToAdd?: string[];
+      tagsToRemove?: string[];
+    };
+
+    if (!tagsToAdd && !tagsToRemove) {
+      return res.status(400).json({
+        error: "Request body must include tagsToAdd and/or tagsToRemove arrays",
+      });
+    }
+
+    if (tagsToAdd && (!Array.isArray(tagsToAdd) || !tagsToAdd.every((t) => typeof t === "string"))) {
+      return res.status(400).json({ error: "tagsToAdd must be an array of strings" });
+    }
+
+    if (tagsToRemove && (!Array.isArray(tagsToRemove) || !tagsToRemove.every((t) => typeof t === "string"))) {
+      return res.status(400).json({ error: "tagsToRemove must be an array of strings" });
+    }
+
+    const Token = (await import("../models/token.js")).default;
+
+    const updateOps: Record<string, unknown> = { lastActive: new Date() };
+    if (tagsToAdd && tagsToAdd.length > 0) {
+      updateOps["$addToSet"] = { tags: { $each: tagsToAdd } };
+    }
+    if (tagsToRemove && tagsToRemove.length > 0) {
+      updateOps["$pullAll"] = { tags: tagsToRemove };
+    }
+
+    const updatedToken = await Token.findOneAndUpdate({ token: deviceToken }, updateOps, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!updatedToken) {
+      return res.status(404).json({ error: "Token not found" });
+    }
+
+    res.json({
+      message: "Token tags updated successfully",
+      token: {
+        id: updatedToken._id,
+        tags: updatedToken.tags,
+        platform: updatedToken.platform,
+        locale: updatedToken.locale,
+        lastActive: updatedToken.lastActive,
+      },
+    });
+  } catch (error) {
+    console.error("Error in PATCH /token:", error);
+    res.status(500).json({
+      error: "Internal server error",
+      message: process.env.NODE_ENV === "development" ? (error as Error).message : undefined,
     });
   }
 });

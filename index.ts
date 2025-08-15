@@ -57,6 +57,7 @@ app.get("/", (req, res) => {
     endpoints: {
       "POST /register": "Register device token (no auth)",
       "GET /token/:id": "Get token info (auth required)",
+      "PATCH /token": "Add/Remove tags on a token (device auth header)",
       "POST /send-push": "Send push notifications (auth required)",
       "GET /health": "Health check (no auth)"
     }
