@@ -4,7 +4,7 @@
 
 ```bash
 # Database Configuration
-MONGO_URI=mongodb://localhost:27017/push-notifications
+MONGO_URL=mongodb://localhost:27017/push-notifications
 
 # Redis Configuration
 REDIS_HOST=localhost

@@ -9,7 +9,7 @@ dotenv.config();
 
 // MongoDB connection event logging
 mongoose.connection.on("connecting", () => {
-  console.log("📡 MongoDB: attempting connection to", process.env.MONGO_URI);
+  console.log("📡 MongoDB: attempting connection to", process.env.MONGO_URL);
 });
 
 mongoose.connection.on("connected", () => {
@@ -33,7 +33,7 @@ const app = express();
 app.use(express.json());
 
 mongoose
-  .connect(process.env.MONGO_URI!)
+  .connect(process.env.MONGO_URL!)
   .catch(console.error);
 
 // Mount routes
