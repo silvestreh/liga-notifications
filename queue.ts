@@ -3,7 +3,7 @@ import IORedis from "ioredis";
 import dotenv from "dotenv";
 dotenv.config();
 
-const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
+const redisUrl = `${process.env.REDIS_URL}?family=0` || "redis://localhost:6379";
 
 export const connection = new IORedis(redisUrl);
 
@@ -24,4 +24,10 @@ connection.on("reconnecting", () => {
   console.warn("🔄 Redis: reconnecting...");
 });
 
-export const pushQueue = new Queue("pushQueue", { connection });
+export const pushQueue = new Queue("pushQueue", {
+  connection: {
+    ...connection,
+    // @ts-ignore
+    family: 0
+  }
+});
