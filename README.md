@@ -184,7 +184,7 @@ Send push notifications to devices matching the specified tags.
 
 ```json
 {
-  "tags": ["premium", "sports"],
+  "tags": ["tag_1", "tag_2"],
   "localesContent": {
     "en": {
       "title": "New Update Available!",
@@ -200,11 +200,7 @@ Send push notifications to devices matching the specified tags.
     }
   },
   "metadata": {
-    "category": "update",
-    "priority": "normal",
-    "deepLink": "myapp://settings/updates",
-    "imageUrl": "https://example.com/update-image.jpg",
-    "customData": "any-json-serializable-data"
+    // anything serializable. up to 4KB
   }
 }
 ```
@@ -260,7 +256,7 @@ The service consists of two components:
 #### Start Both Services
 
 ```bash
-npm start
+npm run start:both
 ```
 
 #### Start Services Individually
@@ -271,19 +267,6 @@ npm run start:api
 
 # Worker process only
 npm run start:worker
-```
-
-#### Development Mode
-
-```bash
-# Watch mode for API server
-npm run dev
-
-# Watch mode for worker
-npm run dev:worker
-
-# TypeScript watch mode
-npm run dev:watch
 ```
 
 ### Testing
