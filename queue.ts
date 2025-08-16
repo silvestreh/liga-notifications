@@ -1,10 +1,10 @@
 import { Queue } from "bullmq";
-import IORedis from "ioredis";
+import { Redis } from "ioredis";
 import dotenv from "dotenv";
 dotenv.config();
 
 const redisURLString = process.env.REDIS_URL!;
-export const connection = new IORedis(redisURLString, {
+export const connection = new Redis(redisURLString, {
   family: 0,
   maxRetriesPerRequest: null,
 });
@@ -18,7 +18,7 @@ connection.on("ready", () => {
   console.log("✅ Redis: connection established and ready to use");
 });
 
-connection.on("error", (err) => {
+connection.on("error", (err: any) => {
   console.error("❌ Redis: connection error", err);
 });
 

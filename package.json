@@ -6,7 +6,7 @@
   "scripts": {
     "prebuild": "npm run clean",
     "build": "tsc",
-    "start:both": "npm run build && concurrently \"npm run start:api\" \"npm run start:worker\"",
+    "start:both": "concurrently \"npm run start:api\" \"npm run start:worker\"",
     "start:api": "node dist/index.js",
     "start:worker": "node dist/workers.js",
     "clean": "rm -rf dist",

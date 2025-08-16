@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import { authenticateDevice } from "../middleware/device-auth";
-import TokenModel from "../models/token";
+import { authenticateDevice } from "../middleware/device-auth.js";
+import TokenModel from "../models/token.js";
 
 const router = Router();
 
