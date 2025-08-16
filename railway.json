@@ -4,15 +4,13 @@
     "builder": "nixpacks"
   },
   "deploy": {
-    "healthcheckPath": "/health",
     "healthcheckTimeout": 300,
     "restartPolicyType": "on_failure"
   },
   "services": [
     {
       "name": "api",
-      "startCommand": "npm run start:api",
-      "healthcheckPath": "/health"
+      "startCommand": "npm run start:api"
     },
     {
       "name": "worker",
