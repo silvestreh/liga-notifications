@@ -1,18 +1,18 @@
-import { Request, Response, NextFunction } from 'express';
-import { authenticateApiKey } from '../middleware/auth';
+import { Request, Response, NextFunction } from "express";
+import { authenticateApiKey } from "../middleware/auth";
 
-describe('Authentication Middleware', () => {
+describe("Authentication Middleware", () => {
   let mockReq: Partial<Request>;
   let mockRes: Partial<Response>;
   let nextFunction: NextFunction;
 
   beforeEach(() => {
     mockReq = {
-      headers: {}
+      headers: {},
     };
     mockRes = {
       status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis()
+      json: jest.fn().mockReturnThis(),
     };
     nextFunction = jest.fn();
   });
@@ -21,9 +21,9 @@ describe('Authentication Middleware', () => {
     jest.clearAllMocks();
   });
 
-  describe('authenticateApiKey', () => {
-    it('should call next() with valid API key in x-api-key header', () => {
-      mockReq.headers = { 'x-api-key': 'test-api-key' };
+  describe("authenticateApiKey", () => {
+    it("should call next() with valid API key in x-api-key header", () => {
+      mockReq.headers = { "x-api-key": "test-api-key" };
 
       authenticateApiKey(mockReq as Request, mockRes as Response, nextFunction);
 
@@ -31,8 +31,8 @@ describe('Authentication Middleware', () => {
       expect(mockRes.status).not.toHaveBeenCalled();
     });
 
-    it('should call next() with valid API key in authorization header', () => {
-      mockReq.headers = { 'authorization': 'Bearer test-api-key' };
+    it("should call next() with valid API key in authorization header", () => {
+      mockReq.headers = { authorization: "Bearer test-api-key" };
 
       authenticateApiKey(mockReq as Request, mockRes as Response, nextFunction);
 
@@ -40,38 +40,44 @@ describe('Authentication Middleware', () => {
       expect(mockRes.status).not.toHaveBeenCalled();
     });
 
-    it('should return 401 for missing API key', () => {
+    it("should return 401 for missing API key", () => {
       mockReq.headers = {};
 
       authenticateApiKey(mockReq as Request, mockRes as Response, nextFunction);
 
       expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockRes.json).toHaveBeenCalledWith({ error: 'Invalid or missing API key' });
+      expect(mockRes.json).toHaveBeenCalledWith({
+        error: "Invalid or missing API key",
+      });
       expect(nextFunction).not.toHaveBeenCalled();
     });
 
-    it('should return 401 for invalid API key', () => {
-      mockReq.headers = { 'x-api-key': 'invalid-key' };
+    it("should return 401 for invalid API key", () => {
+      mockReq.headers = { "x-api-key": "invalid-key" };
 
       authenticateApiKey(mockReq as Request, mockRes as Response, nextFunction);
 
       expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockRes.json).toHaveBeenCalledWith({ error: 'Invalid or missing API key' });
+      expect(mockRes.json).toHaveBeenCalledWith({
+        error: "Invalid or missing API key",
+      });
       expect(nextFunction).not.toHaveBeenCalled();
     });
 
-    it('should return 401 for empty API key', () => {
-      mockReq.headers = { 'x-api-key': '' };
+    it("should return 401 for empty API key", () => {
+      mockReq.headers = { "x-api-key": "" };
 
       authenticateApiKey(mockReq as Request, mockRes as Response, nextFunction);
 
       expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockRes.json).toHaveBeenCalledWith({ error: 'Invalid or missing API key' });
+      expect(mockRes.json).toHaveBeenCalledWith({
+        error: "Invalid or missing API key",
+      });
       expect(nextFunction).not.toHaveBeenCalled();
     });
 
-    it('should handle authorization header without Bearer prefix', () => {
-      mockReq.headers = { 'authorization': 'test-api-key' };
+    it("should handle authorization header without Bearer prefix", () => {
+      mockReq.headers = { authorization: "test-api-key" };
 
       authenticateApiKey(mockReq as Request, mockRes as Response, nextFunction);
 
@@ -79,10 +85,10 @@ describe('Authentication Middleware', () => {
       expect(mockRes.status).not.toHaveBeenCalled();
     });
 
-    it('should prioritize x-api-key over authorization header', () => {
+    it("should prioritize x-api-key over authorization header", () => {
       mockReq.headers = {
-        'x-api-key': 'test-api-key',
-        'authorization': 'Bearer wrong-key'
+        "x-api-key": "test-api-key",
+        authorization: "Bearer wrong-key",
       };
 
       authenticateApiKey(mockReq as Request, mockRes as Response, nextFunction);
@@ -92,7 +98,7 @@ describe('Authentication Middleware', () => {
     });
   });
 
-  describe('when API_KEY environment variable is not set', () => {
+  describe("when API_KEY environment variable is not set", () => {
     const originalApiKey = process.env.API_KEY;
 
     beforeEach(() => {
@@ -103,17 +109,21 @@ describe('Authentication Middleware', () => {
       process.env.API_KEY = originalApiKey;
     });
 
-    it('should return 500 server configuration error', () => {
-      mockReq.headers = { 'x-api-key': 'any-key' };
+    it("should return 500 server configuration error", () => {
+      mockReq.headers = { "x-api-key": "any-key" };
 
       // Spy on console.error to avoid test output pollution
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation();
 
       authenticateApiKey(mockReq as Request, mockRes as Response, nextFunction);
 
-      expect(consoleSpy).toHaveBeenCalledWith('API_KEY environment variable not set');
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "API_KEY environment variable not set",
+      );
       expect(mockRes.status).toHaveBeenCalledWith(500);
-      expect(mockRes.json).toHaveBeenCalledWith({ error: 'Server configuration error' });
+      expect(mockRes.json).toHaveBeenCalledWith({
+        error: "Server configuration error",
+      });
       expect(nextFunction).not.toHaveBeenCalled();
 
       consoleSpy.mockRestore();

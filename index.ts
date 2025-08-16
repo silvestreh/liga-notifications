@@ -28,13 +28,10 @@ mongoose.connection.on("reconnected", () => {
   console.log("🔄 MongoDB: reconnected");
 });
 
-
 const app = express();
 app.use(express.json());
 
-mongoose
-  .connect(process.env.MONGO_URL!)
-  .catch(console.error);
+mongoose.connect(process.env.MONGO_URL!).catch(console.error);
 
 // Health check endpoint (no auth required) - MUST be before routes
 app.get("/health", async (req, res) => {
@@ -45,8 +42,8 @@ app.get("/health", async (req, res) => {
     services: {
       mongodb: { status: "unknown", latency: null as number | null },
       redis: { status: "unknown", latency: null as number | null },
-      queue: { status: "unknown", jobs: null as any }
-    }
+      queue: { status: "unknown", jobs: null as any },
+    },
   };
 
   let overallHealthy = true;
@@ -60,12 +57,12 @@ app.get("/health", async (req, res) => {
     await mongoose.connection.db.admin().ping();
     health.services.mongodb = {
       status: "healthy",
-      latency: Date.now() - mongoStart
+      latency: Date.now() - mongoStart,
     };
   } catch (error) {
     health.services.mongodb = {
       status: "unhealthy",
-      latency: null
+      latency: null,
     };
     overallHealthy = false;
   }
@@ -76,7 +73,7 @@ app.get("/health", async (req, res) => {
     await redisConnection.ping();
     health.services.redis = {
       status: "healthy",
-      latency: Date.now() - redisStart
+      latency: Date.now() - redisStart,
     };
 
     // Check queue status
@@ -91,17 +88,17 @@ app.get("/health", async (req, res) => {
         waiting: waiting.length,
         active: active.length,
         completed: completed.length,
-        failed: failed.length
-      }
+        failed: failed.length,
+      },
     };
   } catch (error) {
     health.services.redis = {
       status: "unhealthy",
-      latency: null
+      latency: null,
     };
     health.services.queue = {
       status: "unhealthy",
-      jobs: null
+      jobs: null,
     };
     overallHealthy = false;
   }
@@ -125,8 +122,8 @@ app.get("/", (req, res) => {
       "GET /token/:id": "Get token info (auth required)",
       "PATCH /token": "Add/Remove tags on a token (device auth header)",
       "POST /send": "Send push notifications (auth required)",
-      "GET /health": "Health check (no auth)"
-    }
+      "GET /health": "Health check (no auth)",
+    },
   });
 });
 

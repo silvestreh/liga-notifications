@@ -8,8 +8,8 @@ import mongoose from "mongoose";
 dotenv.config();
 await mongoose.connect(process.env.MONGO_URL!);
 
-const limit = pLimit(5);
-const batchSize = 100;
+const limit = pLimit(parseInt(process.env.P_LIMIT_CONCURRENCY || "5"));
+const batchSize = parseInt(process.env.BATCH_SIZE || "100");
 
 const worker = new Worker(
   "pushQueue",
@@ -75,9 +75,13 @@ const worker = new Worker(
   },
   {
     connection,
-    concurrency: 3, // Process up to 3 jobs concurrently
-    removeOnComplete: { count: 100 }, // Keep last 100 completed jobs
-    removeOnFail: { count: 50 }, // Keep last 50 failed jobs for debugging
+    concurrency: parseInt(process.env.WORKER_CONCURRENCY || "3"),
+    removeOnComplete: {
+      count: parseInt(process.env.WORKER_REMOVE_ON_COMPLETE || "100"),
+    },
+    removeOnFail: {
+      count: parseInt(process.env.WORKER_REMOVE_ON_FAIL || "50"),
+    },
   },
 );
 
@@ -93,19 +97,31 @@ worker.on("error", (err) => {
   console.error("❌ Worker error:", err);
 });
 
-// Graceful shutdown handling
-process.on("SIGTERM", async () => {
-  console.log("SIGTERM received, shutting down worker gracefully...");
-  await worker.close();
-  await mongoose.connection.close();
-  process.exit(0);
-});
+// Graceful shutdown handling for Railway
+const gracefulShutdown = async (signal: string) => {
+  console.log(`${signal} received, shutting down worker gracefully...`);
 
-process.on("SIGINT", async () => {
-  console.log("SIGINT received, shutting down worker gracefully...");
+  // Stop accepting new jobs
   await worker.close();
-  await mongoose.connection.close();
-  process.exit(0);
-});
+
+  // Wait for current jobs to complete (with timeout)
+  const timeout = setTimeout(() => {
+    console.log("Force shutdown after timeout");
+    process.exit(1);
+  }, 30000); // 30 second timeout
+
+  try {
+    await mongoose.connection.close();
+    clearTimeout(timeout);
+    console.log("Graceful shutdown completed");
+    process.exit(0);
+  } catch (error) {
+    console.error("Error during shutdown:", error);
+    process.exit(1);
+  }
+};
+
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
 console.log("🚀 Worker started and ready to process push notification jobs...");

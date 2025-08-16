@@ -1,11 +1,11 @@
-import request from 'supertest';
-import express from 'express';
-import mongoose from 'mongoose';
-import jwt from 'jsonwebtoken';
-import { authenticateApiKey } from '../middleware/auth';
-import tokenRoutes from '../routes/token-routes';
-import pushRoutes from '../routes/push-routes';
-import Token from '../models/token';
+import request from "supertest";
+import express from "express";
+import mongoose from "mongoose";
+import jwt from "jsonwebtoken";
+import { authenticateApiKey } from "../middleware/auth";
+import tokenRoutes from "../routes/token-routes";
+import pushRoutes from "../routes/push-routes";
+import Token from "../models/token";
 
 // Create test app (similar to main app)
 const createTestApp = () => {
@@ -13,60 +13,82 @@ const createTestApp = () => {
   app.use(express.json());
 
   // Health check endpoint
-  app.get('/health', (req, res) => {
+  app.get("/health", (req, res) => {
     res.json({
-      status: 'healthy',
+      status: "healthy",
       timestamp: new Date().toISOString(),
-      uptime: process.uptime()
+      uptime: process.uptime(),
     });
   });
 
   // Root endpoint
-  app.get('/', (req, res) => {
+  app.get("/", (req, res) => {
     res.json({
-      service: 'Push Notification Service',
-      version: '1.0.0',
+      service: "Push Notification Service",
+      version: "1.0.0",
       endpoints: {
-        'POST /register': 'Register device token (no auth)',
-        'GET /token/:id': 'Get token info (auth required)',
-        'POST /send': 'Send push notifications (auth required)',
-        'GET /health': 'Health check (no auth)'
-      }
+        "POST /register": "Register device token (no auth)",
+        "GET /token/:id": "Get token info (auth required)",
+        "POST /send": "Send push notifications (auth required)",
+        "GET /health": "Health check (no auth)",
+      },
     });
   });
 
   // Mount routes
-  app.use('/', tokenRoutes);
-  app.use('/', authenticateApiKey, pushRoutes);
+  app.use("/", tokenRoutes);
+  app.use("/", authenticateApiKey, pushRoutes);
 
   return app;
 };
 
-describe('Integration Tests', () => {
+describe("Integration Tests", () => {
   let app: express.Application;
 
   beforeEach(() => {
     app = createTestApp();
   });
 
-  describe('Complete User Journey', () => {
-    it('should handle complete push notification flow', async () => {
+  describe("Complete User Journey", () => {
+    it("should handle complete push notification flow", async () => {
       // Step 1: Register multiple devices
       const devices = [
-        { token: 'device-1-token', platform: 'ios', tags: ['sports', 'premium'], locale: 'en' },
-        { token: 'device-2-token', platform: 'ios', tags: ['sports'], locale: 'es' },
-        { token: 'device-3-token', platform: 'android', tags: ['news'], locale: 'en' },
-        { token: 'device-4-token', platform: 'ios', tags: ['sports', 'news'], locale: 'fr' }
+        {
+          token: "device-1-token",
+          platform: "ios",
+          tags: ["sports", "premium"],
+          locale: "en",
+        },
+        {
+          token: "device-2-token",
+          platform: "ios",
+          tags: ["sports"],
+          locale: "es",
+        },
+        {
+          token: "device-3-token",
+          platform: "android",
+          tags: ["news"],
+          locale: "en",
+        },
+        {
+          token: "device-4-token",
+          platform: "ios",
+          tags: ["sports", "news"],
+          locale: "fr",
+        },
       ];
 
       // Register all devices (no auth required)
       for (const device of devices) {
         const response = await request(app)
-          .post('/register')
+          .post("/register")
           .send(device)
           .expect(200);
 
-        expect(response.body.message).toBe('Device token registered successfully');
+        expect(response.body.message).toBe(
+          "Device token registered successfully",
+        );
       }
 
       // Verify all devices were registered
@@ -75,52 +97,61 @@ describe('Integration Tests', () => {
 
       // Step 2: Send targeted push notification
       const pushData = {
-        tags: ['sports'],
+        tags: ["sports"],
         localesContent: {
-          en: { title: 'Sports Alert!', text: 'Your favorite team is playing now!' },
-          es: { title: '¡Alerta Deportiva!', text: '¡Tu equipo favorito está jugando ahora!' },
-          fr: { title: 'Alerte Sport!', text: 'Votre équipe préférée joue maintenant!' }
-        }
+          en: {
+            title: "Sports Alert!",
+            text: "Your favorite team is playing now!",
+          },
+          es: {
+            title: "¡Alerta Deportiva!",
+            text: "¡Tu equipo favorito está jugando ahora!",
+          },
+          fr: {
+            title: "Alerte Sport!",
+            text: "Votre équipe préférée joue maintenant!",
+          },
+        },
       };
 
       const pushResponse = await request(app)
-        .post('/send')
-        .set('X-API-Key', 'test-api-key')
+        .post("/send")
+        .set("X-API-Key", "test-api-key")
         .send(pushData)
         .expect(200);
 
       // Should target devices with 'sports' tag (3 devices)
       expect(pushResponse.body).toMatchObject({
-        message: 'Push notification jobs queued successfully',
+        message: "Push notification jobs queued successfully",
         totalUsers: 3,
         jobsAdded: 3, // en, es, fr locales
-        locales: expect.arrayContaining(['en', 'es', 'fr'])
+        locales: expect.arrayContaining(["en", "es", "fr"]),
       });
 
       // Step 3: Update device tags
       const updateResponse = await request(app)
-        .post('/register')
+        .post("/register")
         .send({
-          token: 'device-1-token',
-          tags: ['news', 'breaking'], // Changed from sports to news
-          locale: 'en'
+          token: "device-1-token",
+          tags: ["news", "breaking"], // Changed from sports to news
+          locale: "en",
         })
         .expect(200);
 
-      expect(updateResponse.body.token.tags).toEqual(['news', 'breaking']);
+      expect(updateResponse.body.token.tags).toEqual(["news", "breaking"]);
 
       // Step 4: Send another notification to verify targeting changed
       const newsAlert = {
-        tags: ['news'],
+        tags: ["news"],
         localesContent: {
-          en: { title: 'Breaking News', text: 'Important update!' },
-          fr: { title: 'Actualités', text: 'Mise à jour importante!' }
-        }
+          en: { title: "Breaking News", text: "Important update!" },
+          fr: { title: "Actualités", text: "Mise à jour importante!" },
+        },
       };
 
       const newsResponse = await request(app)
-        .post('/send')
-        .set('X-API-Key', 'test-api-key')
+        .post("/send")
+        .set("X-API-Key", "test-api-key")
         .send(newsAlert)
         .expect(200);
 
@@ -128,64 +159,68 @@ describe('Integration Tests', () => {
       expect(newsResponse.body.totalUsers).toBe(3);
 
       // Step 5: Look up device info
-      const deviceSecret = process.env.DEVICE_SECRET || 'test-device-secret';
-      const deviceAuthToken = jwt.sign({ token: 'device-1-token' }, deviceSecret, {
-        expiresIn: '365d'
-      });
+      const deviceSecret = process.env.DEVICE_SECRET || "test-device-secret";
+      const deviceAuthToken = jwt.sign(
+        { token: "device-1-token" },
+        deviceSecret,
+        {
+          expiresIn: "365d",
+        },
+      );
 
       const lookupResponse = await request(app)
-        .get('/token/device-1-token')
-        .set('X-Device-Auth', deviceAuthToken)
+        .get("/token/device-1-token")
+        .set("X-Device-Auth", deviceAuthToken)
         .expect(200);
 
       expect(lookupResponse.body.token).toMatchObject({
-        tokenPreview: 'device-1-t...',
-        platform: 'ios',
-        tags: ['news', 'breaking'],
-        locale: 'en'
+        tokenPreview: "device-1-t...",
+        platform: "ios",
+        tags: ["news", "breaking"],
+        locale: "en",
       });
     });
 
-    it('should handle edge cases gracefully', async () => {
+    it("should handle edge cases gracefully", async () => {
       // Test with no matching devices
       const response = await request(app)
-        .post('/send')
-        .set('X-API-Key', 'test-api-key')
+        .post("/send")
+        .set("X-API-Key", "test-api-key")
         .send({
-          tags: ['nonexistent'],
+          tags: ["nonexistent"],
           localesContent: {
-            en: { title: 'Test', text: 'Message' }
-          }
+            en: { title: "Test", text: "Message" },
+          },
         })
         .expect(200);
 
       expect(response.body).toMatchObject({
-        message: 'No devices found for the specified tags',
-        totalUsers: 0
+        message: "No devices found for the specified tags",
+        totalUsers: 0,
       });
     });
 
-    it('should handle partial locale coverage', async () => {
+    it("should handle partial locale coverage", async () => {
       // Register devices with different locales
       await request(app)
-        .post('/register')
-        .send({ token: 'en-device', tags: ['test'], locale: 'en' })
+        .post("/register")
+        .send({ token: "en-device", tags: ["test"], locale: "en" })
         .expect(200);
 
       await request(app)
-        .post('/register')
-        .send({ token: 'de-device', tags: ['test'], locale: 'de' })
+        .post("/register")
+        .send({ token: "de-device", tags: ["test"], locale: "de" })
         .expect(200);
 
       // Send push with only English content
       const response = await request(app)
-        .post('/send')
-        .set('X-API-Key', 'test-api-key')
+        .post("/send")
+        .set("X-API-Key", "test-api-key")
         .send({
-          tags: ['test'],
+          tags: ["test"],
           localesContent: {
-            en: { title: 'English Only', text: 'English message' }
-          }
+            en: { title: "English Only", text: "English message" },
+          },
         })
         .expect(200);
 
@@ -193,116 +228,114 @@ describe('Integration Tests', () => {
       expect(response.body).toMatchObject({
         totalUsers: 2,
         jobsAdded: 1,
-        locales: ['en', 'de'] // Found both locales but only processed en
+        locales: ["en", "de"], // Found both locales but only processed en
       });
     });
   });
 
-  describe('API Documentation Endpoints', () => {
-    it('should return API documentation on root endpoint', async () => {
-      const response = await request(app)
-        .get('/')
-        .expect(200);
+  describe("API Documentation Endpoints", () => {
+    it("should return API documentation on root endpoint", async () => {
+      const response = await request(app).get("/").expect(200);
 
       expect(response.body).toMatchObject({
-        service: 'Push Notification Service',
-        version: '1.0.0',
+        service: "Push Notification Service",
+        version: "1.0.0",
         endpoints: expect.objectContaining({
-          'POST /register': 'Register device token (no auth)',
-          'POST /send': 'Send push notifications (auth required)'
-        })
+          "POST /register": "Register device token (no auth)",
+          "POST /send": "Send push notifications (auth required)",
+        }),
       });
     });
 
-    it('should return health status', async () => {
-      const response = await request(app)
-        .get('/health')
-        .expect(200);
+    it("should return health status", async () => {
+      const response = await request(app).get("/health").expect(200);
 
       expect(response.body).toMatchObject({
-        status: 'healthy',
+        status: "healthy",
         timestamp: expect.any(String),
-        uptime: expect.any(Number)
+        uptime: expect.any(Number),
       });
     });
   });
 
-  describe('Authentication Flow', () => {
-    it('should allow public endpoints without authentication', async () => {
+  describe("Authentication Flow", () => {
+    it("should allow public endpoints without authentication", async () => {
       // These should work without API key
-      await request(app).get('/').expect(200);
-      await request(app).get('/health').expect(200);
+      await request(app).get("/").expect(200);
+      await request(app).get("/health").expect(200);
       await request(app)
-        .post('/register')
-        .send({ token: 'test-token' })
+        .post("/register")
+        .send({ token: "test-token" })
         .expect(200);
     });
 
-    it('should protect admin endpoints with authentication', async () => {
+    it("should protect admin endpoints with authentication", async () => {
       // These should require API key
       await request(app)
-        .post('/send')
-        .send({ tags: ['test'], localesContent: { en: { title: 'Test', text: 'Test' } } })
+        .post("/send")
+        .send({
+          tags: ["test"],
+          localesContent: { en: { title: "Test", text: "Test" } },
+        })
         .expect(401);
 
-      await request(app)
-        .get('/token/some-token')
-        .expect(401);
+      await request(app).get("/token/some-token").expect(401);
     });
 
-    it('should accept valid authentication', async () => {
+    it("should accept valid authentication", async () => {
       // Create a token first
       await Token.create({
-        token: 'auth-test-token',
-        tags: ['test'],
-        locale: 'en',
-        platform: 'ios'
+        token: "auth-test-token",
+        tags: ["test"],
+        locale: "en",
+        platform: "ios",
       });
 
       // These should work with valid device auth
-      const deviceSecret = process.env.DEVICE_SECRET || 'test-device-secret';
-      const deviceAuthToken = jwt.sign({ token: 'auth-test-token' }, deviceSecret, {
-        expiresIn: '365d'
-      });
+      const deviceSecret = process.env.DEVICE_SECRET || "test-device-secret";
+      const deviceAuthToken = jwt.sign(
+        { token: "auth-test-token" },
+        deviceSecret,
+        {
+          expiresIn: "365d",
+        },
+      );
 
       await request(app)
-        .get('/token/auth-test-token')
-        .set('X-Device-Auth', deviceAuthToken)
+        .get("/token/auth-test-token")
+        .set("X-Device-Auth", deviceAuthToken)
         .expect(200);
 
       await request(app)
-        .post('/send')
-        .set('Authorization', 'Bearer test-api-key')
+        .post("/send")
+        .set("Authorization", "Bearer test-api-key")
         .send({
-          tags: ['test'],
-          localesContent: { en: { title: 'Test', text: 'Test' } }
+          tags: ["test"],
+          localesContent: { en: { title: "Test", text: "Test" } },
         })
         .expect(200);
     });
   });
 
-  describe('Database Consistency', () => {
-    it('should maintain data consistency across operations', async () => {
+  describe("Database Consistency", () => {
+    it("should maintain data consistency across operations", async () => {
       const tokenData = {
-        token: 'consistency-test-token',
-        platform: 'ios',
-        tags: ['initial'],
-        locale: 'en'
+        token: "consistency-test-token",
+        platform: "ios",
+        tags: ["initial"],
+        locale: "en",
       };
 
       // Initial registration
-      await request(app)
-        .post('/register')
-        .send(tokenData)
-        .expect(200);
+      await request(app).post("/register").send(tokenData).expect(200);
 
       let dbToken = await Token.findOne({ token: tokenData.token });
-      expect(dbToken?.tags).toEqual(['initial']);
+      expect(dbToken?.tags).toEqual(["initial"]);
 
       // Update registration (should update, not create new)
       await request(app)
-        .post('/register')
-        .send({ ...tokenData, tags: ['updated'] })
+        .post("/register")
+        .send({ ...tokenData, tags: ["updated"] })
         .expect(200);
 
       // Verify only one document exists
@@ -310,7 +343,7 @@ describe('Integration Tests', () => {
       expect(tokenCount).toBe(1);
 
       dbToken = await Token.findOne({ token: tokenData.token });
-      expect(dbToken?.tags).toEqual(['updated']);
+      expect(dbToken?.tags).toEqual(["updated"]);
       expect(dbToken?.lastActive).toBeDefined();
     });
   });

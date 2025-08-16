@@ -1,18 +1,18 @@
-import request from 'supertest';
-import express from 'express';
-import jwt from 'jsonwebtoken';
-import tokenRoutes from '../routes/token-routes';
-import Token from '../models/token';
+import request from "supertest";
+import express from "express";
+import jwt from "jsonwebtoken";
+import tokenRoutes from "../routes/token-routes";
+import Token from "../models/token";
 
 // Helper to create test app instance
 const createTestApp = () => {
   const app = express();
   app.use(express.json());
-  app.use('/', tokenRoutes); // register & token routes
+  app.use("/", tokenRoutes); // register & token routes
   return app;
 };
 
-describe('PATCH /token', () => {
+describe("PATCH /token", () => {
   let app: express.Application;
   let deviceAuthToken: string;
 
@@ -20,44 +20,44 @@ describe('PATCH /token', () => {
     app = createTestApp();
     await Token.deleteMany({});
     await Token.create({
-      token: 'patchable-token-123',
-      platform: 'ios',
-      tags: ['initial'],
-      locale: 'en'
+      token: "patchable-token-123",
+      platform: "ios",
+      tags: ["initial"],
+      locale: "en",
     });
 
     // Create device auth token for the test token
-    const deviceSecret = process.env.DEVICE_SECRET || 'test-device-secret';
-    deviceAuthToken = jwt.sign({ token: 'patchable-token-123' }, deviceSecret, {
-      expiresIn: '365d'
+    const deviceSecret = process.env.DEVICE_SECRET || "test-device-secret";
+    deviceAuthToken = jwt.sign({ token: "patchable-token-123" }, deviceSecret, {
+      expiresIn: "365d",
     });
   });
 
-  it('should add and remove tags with valid authentication', async () => {
+  it("should add and remove tags with valid authentication", async () => {
     const response = await request(app)
-      .patch('/token')
-      .set('X-Device-Auth', deviceAuthToken)
+      .patch("/token")
+      .set("X-Device-Auth", deviceAuthToken)
       .send({
-        tagsToAdd: ['added'],
-        tagsToRemove: ['initial']
+        tagsToAdd: ["added"],
+        tagsToRemove: ["initial"],
       })
       .expect(200);
 
-    expect(response.body.token.tags).toEqual(['added']);
+    expect(response.body.token.tags).toEqual(["added"]);
   });
 
-  it('should validate tagsToAdd type', async () => {
+  it("should validate tagsToAdd type", async () => {
     await request(app)
-      .patch('/token')
-      .set('X-Device-Auth', deviceAuthToken)
-      .send({ tagsToAdd: 'invalid' })
+      .patch("/token")
+      .set("X-Device-Auth", deviceAuthToken)
+      .send({ tagsToAdd: "invalid" })
       .expect(400);
   });
 
-  it('should require at least one operation', async () => {
+  it("should require at least one operation", async () => {
     await request(app)
-      .patch('/token')
-      .set('X-Device-Auth', deviceAuthToken)
+      .patch("/token")
+      .set("X-Device-Auth", deviceAuthToken)
       .send({})
       .expect(400);
   });

@@ -16,15 +16,6 @@
     "noEmit": false,
     "incremental": true
   },
-  "include": [
-    "*.ts",
-    "models/*.ts",
-    "types/**/*.d.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "**/*.test.ts",
-    "**/*.spec.ts"
-  ]
+  "include": ["*.ts", "models/*.ts", "types/**/*.d.ts"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
 }

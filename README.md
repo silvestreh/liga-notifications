@@ -41,6 +41,7 @@ NODE_ENV=development
 ### Public Endpoints
 
 #### Register Device Token
+
 **POST** `/register`
 
 Register or update a device token with optional metadata.
@@ -55,6 +56,7 @@ Register or update a device token with optional metadata.
 ```
 
 **Response:**
+
 ```json
 {
   "message": "Device token registered successfully",
@@ -70,11 +72,13 @@ Register or update a device token with optional metadata.
 ```
 
 #### Health Check
+
 **GET** `/health`
 
 Returns comprehensive service health status including all dependencies.
 
 **Response (Healthy):**
+
 ```json
 {
   "status": "healthy",
@@ -110,15 +114,18 @@ Returns HTTP 503 status code when any service is unhealthy.
 These endpoints require a device authentication token (JWT) obtained from the registration response.
 
 **Authentication:** Include the JWT token in the request header:
+
 - `X-Device-Auth: your-jwt-token`
 - `Authorization: Bearer your-jwt-token`
 
 #### Get Token Information
+
 **GET** `/token/:tokenId`
 
 Retrieve information about a specific device token.
 
 **Response:**
+
 ```json
 {
   "token": {
@@ -133,6 +140,7 @@ Retrieve information about a specific device token.
 ```
 
 #### Update Token Tags
+
 **PATCH** `/token`
 
 Add or remove tags from the authenticated device token.
@@ -145,6 +153,7 @@ Add or remove tags from the authenticated device token.
 ```
 
 **Response:**
+
 ```json
 {
   "message": "Token tags updated successfully",
@@ -163,10 +172,12 @@ Add or remove tags from the authenticated device token.
 These endpoints require API key authentication for administrative operations.
 
 **Authentication:** Include your API key in the request header:
+
 - `X-API-Key: your-secret-api-key`
 - `Authorization: Bearer your-secret-api-key`
 
 #### Send Push Notification
+
 **POST** `/send`
 
 Send push notifications to devices matching the specified tags.
@@ -192,6 +203,7 @@ Send push notifications to devices matching the specified tags.
 ```
 
 **Response:**
+
 ```json
 {
   "message": "Push notification jobs queued successfully",
@@ -204,24 +216,29 @@ Send push notifications to devices matching the specified tags.
 ## Authentication Types
 
 ### API Key Authentication
+
 Used for administrative operations like sending push notifications. Include your API key in requests using either header format.
 
 ### Device Authentication
+
 Used for device-specific operations like updating tags or retrieving token info. Devices receive a JWT token when registering, which must be included in subsequent requests.
 
 ## Development
 
 ### Prerequisites
+
 - Node.js 18+
 - MongoDB
 - Redis
 
 ### Installation
+
 ```bash
 npm install
 ```
 
 ### Build
+
 ```bash
 npm run build
 ```
@@ -234,11 +251,13 @@ The service consists of two components:
 2. **Worker Process**: Processes push notification jobs from the queue
 
 #### Start Both Services
+
 ```bash
 npm start
 ```
 
 #### Start Services Individually
+
 ```bash
 # API server only
 npm run start:api
@@ -248,6 +267,7 @@ npm run start:worker
 ```
 
 #### Development Mode
+
 ```bash
 # Watch mode for API server
 npm run dev
@@ -260,6 +280,7 @@ npm run dev:watch
 ```
 
 ### Testing
+
 ```bash
 # Run all tests
 npm test

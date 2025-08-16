@@ -1,10 +1,10 @@
-import request from 'supertest';
-import express from 'express';
-import jwt from 'jsonwebtoken';
-import { authenticateApiKey } from '../middleware/auth';
-import tokenRoutes from '../routes/token-routes';
-import pushRoutes from '../routes/push-routes';
-import Token from '../models/token';
+import request from "supertest";
+import express from "express";
+import jwt from "jsonwebtoken";
+import { authenticateApiKey } from "../middleware/auth";
+import tokenRoutes from "../routes/token-routes";
+import pushRoutes from "../routes/push-routes";
+import Token from "../models/token";
 
 // Create test app
 const createTestApp = () => {
@@ -12,328 +12,359 @@ const createTestApp = () => {
   app.use(express.json());
 
   // Mount routes like in main app
-  app.use('/', tokenRoutes);
-  app.use('/', authenticateApiKey, pushRoutes);
+  app.use("/", tokenRoutes);
+  app.use("/", authenticateApiKey, pushRoutes);
 
   return app;
 };
 
-describe('API Routes', () => {
+describe("API Routes", () => {
   let app: express.Application;
 
   beforeEach(() => {
     app = createTestApp();
   });
 
-  describe('Token Routes', () => {
-    describe('POST /register', () => {
-      it('should register a new device token', async () => {
+  describe("Token Routes", () => {
+    describe("POST /register", () => {
+      it("should register a new device token", async () => {
         const tokenData = {
-          token: 'new-device-token-123',
-          platform: 'ios',
-          tags: ['sports', 'news'],
-          locale: 'en'
+          token: "new-device-token-123",
+          platform: "ios",
+          tags: ["sports", "news"],
+          locale: "en",
         };
 
         const response = await request(app)
-          .post('/register')
+          .post("/register")
           .send(tokenData)
           .expect(200);
 
         expect(response.body).toMatchObject({
-          message: 'Device token registered successfully',
+          message: "Device token registered successfully",
           token: {
-            platform: 'ios',
-            tags: ['sports', 'news'],
-            locale: 'en'
-          }
+            platform: "ios",
+            tags: ["sports", "news"],
+            locale: "en",
+          },
         });
 
         // Verify token was saved to database
         const savedToken = await Token.findOne({ token: tokenData.token });
         expect(savedToken).toBeTruthy();
-        expect(savedToken?.tags).toEqual(['sports', 'news']);
+        expect(savedToken?.tags).toEqual(["sports", "news"]);
       });
 
-      it('should update existing token', async () => {
+      it("should update existing token", async () => {
         // Create initial token
         await Token.create({
-          token: 'existing-token-123',
-          platform: 'ios',
-          tags: ['old-tag'],
-          locale: 'en'
+          token: "existing-token-123",
+          platform: "ios",
+          tags: ["old-tag"],
+          locale: "en",
         });
 
         const updateData = {
-          token: 'existing-token-123',
-          platform: 'android',
-          tags: ['new-tag', 'updated'],
-          locale: 'es'
+          token: "existing-token-123",
+          platform: "android",
+          tags: ["new-tag", "updated"],
+          locale: "es",
         };
 
         const response = await request(app)
-          .post('/register')
+          .post("/register")
           .send(updateData)
           .expect(200);
 
         expect(response.body.token).toMatchObject({
-          platform: 'android',
-          tags: ['new-tag', 'updated'],
-          locale: 'es'
+          platform: "android",
+          tags: ["new-tag", "updated"],
+          locale: "es",
         });
 
         // Verify only one token exists
-        const tokenCount = await Token.countDocuments({ token: 'existing-token-123' });
+        const tokenCount = await Token.countDocuments({
+          token: "existing-token-123",
+        });
         expect(tokenCount).toBe(1);
       });
 
-      it('should use default values when optional fields are missing', async () => {
+      it("should use default values when optional fields are missing", async () => {
         const response = await request(app)
-          .post('/register')
-          .send({ token: 'minimal-token-123' })
+          .post("/register")
+          .send({ token: "minimal-token-123" })
           .expect(200);
 
         expect(response.body.token).toMatchObject({
-          platform: 'ios',
+          platform: "ios",
           tags: [],
-          locale: 'en'
+          locale: "en",
         });
       });
 
-      it('should validate required token field', async () => {
+      it("should validate required token field", async () => {
         await request(app)
-          .post('/register')
+          .post("/register")
           .send({})
           .expect(400)
           .expect((res) => {
-            expect(res.body.error).toContain('token is required');
+            expect(res.body.error).toContain("token is required");
           });
       });
 
-      it('should validate platform field', async () => {
+      it("should validate platform field", async () => {
         await request(app)
-          .post('/register')
-          .send({ token: 'test-token', platform: 'invalid' })
+          .post("/register")
+          .send({ token: "test-token", platform: "invalid" })
           .expect(400)
           .expect((res) => {
-            expect(res.body.error).toContain('platform must be one of');
+            expect(res.body.error).toContain("platform must be one of");
           });
       });
 
-      it('should validate tags field', async () => {
+      it("should validate tags field", async () => {
         await request(app)
-          .post('/register')
-          .send({ token: 'test-token', tags: 'invalid' })
+          .post("/register")
+          .send({ token: "test-token", tags: "invalid" })
           .expect(400)
           .expect((res) => {
-            expect(res.body.error).toContain('tags must be an array of strings');
+            expect(res.body.error).toContain(
+              "tags must be an array of strings",
+            );
           });
       });
 
-      it('should validate locale field', async () => {
+      it("should validate locale field", async () => {
         await request(app)
-          .post('/register')
-          .send({ token: 'test-token', locale: 'x' })
+          .post("/register")
+          .send({ token: "test-token", locale: "x" })
           .expect(400)
           .expect((res) => {
-            expect(res.body.error).toContain('locale must be a valid language code');
+            expect(res.body.error).toContain(
+              "locale must be a valid language code",
+            );
           });
       });
     });
 
-    describe('GET /token/:tokenId', () => {
+    describe("GET /token/:tokenId", () => {
       let deviceAuthToken: string;
 
       beforeEach(async () => {
         await Token.create([
           {
-            token: 'lookup-token-123456789012345',
-            platform: 'ios',
-            tags: ['test'],
-            locale: 'en'
-          }
+            token: "lookup-token-123456789012345",
+            platform: "ios",
+            tags: ["test"],
+            locale: "en",
+          },
         ]);
 
         // Create device auth token for the test token
-        const deviceSecret = process.env.DEVICE_SECRET || 'test-device-secret';
-        deviceAuthToken = jwt.sign({ token: 'lookup-token-123456789012345' }, deviceSecret, {
-          expiresIn: '365d'
-        });
+        const deviceSecret = process.env.DEVICE_SECRET || "test-device-secret";
+        deviceAuthToken = jwt.sign(
+          { token: "lookup-token-123456789012345" },
+          deviceSecret,
+          {
+            expiresIn: "365d",
+          },
+        );
       });
 
-      it('should return token info with valid authentication', async () => {
+      it("should return token info with valid authentication", async () => {
         const response = await request(app)
-          .get('/token/lookup-token-123456789012345')
-          .set('X-Device-Auth', deviceAuthToken)
+          .get("/token/lookup-token-123456789012345")
+          .set("X-Device-Auth", deviceAuthToken)
           .expect(200);
 
         expect(response.body.token).toMatchObject({
-          tokenPreview: 'lookup-tok...',
-          platform: 'ios',
-          tags: ['test'],
-          locale: 'en'
+          tokenPreview: "lookup-tok...",
+          platform: "ios",
+          tags: ["test"],
+          locale: "en",
         });
       });
 
-      it('should require authentication', async () => {
+      it("should require authentication", async () => {
         await request(app)
-          .get('/token/lookup-token-123456789012345')
+          .get("/token/lookup-token-123456789012345")
           .expect(401)
           .expect((res) => {
-            expect(res.body.error).toContain('Missing device auth token');
+            expect(res.body.error).toContain("Missing device auth token");
           });
       });
 
-      it('should return 404 for non-existent token', async () => {
+      it("should return 404 for non-existent token", async () => {
         await request(app)
-          .get('/token/nonexistent-token')
-          .set('X-Device-Auth', deviceAuthToken)
+          .get("/token/nonexistent-token")
+          .set("X-Device-Auth", deviceAuthToken)
           .expect(404)
           .expect((res) => {
-            expect(res.body.error).toBe('Token not found');
+            expect(res.body.error).toBe("Token not found");
           });
       });
 
-      it('should validate tokenId length', async () => {
+      it("should validate tokenId length", async () => {
         await request(app)
-          .get('/token/short')
-          .set('X-Device-Auth', deviceAuthToken)
+          .get("/token/short")
+          .set("X-Device-Auth", deviceAuthToken)
           .expect(400)
           .expect((res) => {
-            expect(res.body.error).toContain('tokenId must be at least 10 characters');
+            expect(res.body.error).toContain(
+              "tokenId must be at least 10 characters",
+            );
           });
       });
     });
   });
 
-  describe('Push Routes', () => {
+  describe("Push Routes", () => {
     beforeEach(async () => {
       // Create test tokens for push notifications
       await Token.create([
-        { token: 'push-token-1', tags: ['sports'], locale: 'en', platform: 'ios' },
-        { token: 'push-token-2', tags: ['sports'], locale: 'es', platform: 'ios' },
-        { token: 'push-token-3', tags: ['news'], locale: 'en', platform: 'ios' }
+        {
+          token: "push-token-1",
+          tags: ["sports"],
+          locale: "en",
+          platform: "ios",
+        },
+        {
+          token: "push-token-2",
+          tags: ["sports"],
+          locale: "es",
+          platform: "ios",
+        },
+        {
+          token: "push-token-3",
+          tags: ["news"],
+          locale: "en",
+          platform: "ios",
+        },
       ]);
     });
 
-    describe('POST /send', () => {
+    describe("POST /send", () => {
       const validPushData = {
-        tags: ['sports'],
+        tags: ["sports"],
         localesContent: {
-          en: { title: 'Sports Update', text: 'Your team won!' },
-          es: { title: 'Actualización Deportiva', text: '¡Tu equipo ganó!' }
-        }
+          en: { title: "Sports Update", text: "Your team won!" },
+          es: { title: "Actualización Deportiva", text: "¡Tu equipo ganó!" },
+        },
       };
 
-      it('should queue push notifications with valid authentication', async () => {
+      it("should queue push notifications with valid authentication", async () => {
         const response = await request(app)
-          .post('/send')
-          .set('X-API-Key', 'test-api-key')
+          .post("/send")
+          .set("X-API-Key", "test-api-key")
           .send(validPushData)
           .expect(200);
 
         expect(response.body).toMatchObject({
-          message: 'Push notification jobs queued successfully',
+          message: "Push notification jobs queued successfully",
           totalUsers: 2,
           jobsAdded: 2,
-          locales: expect.arrayContaining(['en', 'es'])
+          locales: expect.arrayContaining(["en", "es"]),
         });
       });
 
-      it('should require authentication', async () => {
+      it("should require authentication", async () => {
         await request(app)
-          .post('/send')
+          .post("/send")
           .send(validPushData)
           .expect(401)
           .expect((res) => {
-            expect(res.body.error).toContain('Invalid or missing API key');
+            expect(res.body.error).toContain("Invalid or missing API key");
           });
       });
 
-      it('should validate tags field', async () => {
+      it("should validate tags field", async () => {
         await request(app)
-          .post('/send')
-          .set('X-API-Key', 'test-api-key')
+          .post("/send")
+          .set("X-API-Key", "test-api-key")
           .send({ ...validPushData, tags: [] })
           .expect(400)
           .expect((res) => {
-            expect(res.body.error).toContain('tags must be a non-empty array');
+            expect(res.body.error).toContain("tags must be a non-empty array");
           });
       });
 
-      it('should validate localesContent field', async () => {
+      it("should validate localesContent field", async () => {
         await request(app)
-          .post('/send')
-          .set('X-API-Key', 'test-api-key')
+          .post("/send")
+          .set("X-API-Key", "test-api-key")
           .send({ ...validPushData, localesContent: null })
           .expect(400)
           .expect((res) => {
-            expect(res.body.error).toContain('localesContent must be an object');
+            expect(res.body.error).toContain(
+              "localesContent must be an object",
+            );
           });
       });
 
-      it('should validate localesContent structure', async () => {
+      it("should validate localesContent structure", async () => {
         const invalidContent = {
-          tags: ['sports'],
+          tags: ["sports"],
           localesContent: {
-            en: { title: 'Title only' }, // Missing text
-            es: { text: 'Text only' }    // Missing title
-          }
+            en: { title: "Title only" }, // Missing text
+            es: { text: "Text only" }, // Missing title
+          },
         };
 
         await request(app)
-          .post('/send')
-          .set('X-API-Key', 'test-api-key')
+          .post("/send")
+          .set("X-API-Key", "test-api-key")
           .send(invalidContent)
           .expect(400)
           .expect((res) => {
-            expect(res.body.error).toContain('must have title and text properties');
+            expect(res.body.error).toContain(
+              "must have title and text properties",
+            );
           });
       });
 
-      it('should handle no matching devices gracefully', async () => {
+      it("should handle no matching devices gracefully", async () => {
         const response = await request(app)
-          .post('/send')
-          .set('X-API-Key', 'test-api-key')
+          .post("/send")
+          .set("X-API-Key", "test-api-key")
           .send({
-            tags: ['nonexistent'],
-            localesContent: validPushData.localesContent
+            tags: ["nonexistent"],
+            localesContent: validPushData.localesContent,
           })
           .expect(200);
 
         expect(response.body).toMatchObject({
-          message: 'No devices found for the specified tags',
-          totalUsers: 0
+          message: "No devices found for the specified tags",
+          totalUsers: 0,
         });
       });
 
-      it('should validate that tags are strings', async () => {
+      it("should validate that tags are strings", async () => {
         await request(app)
-          .post('/send')
-          .set('X-API-Key', 'test-api-key')
+          .post("/send")
+          .set("X-API-Key", "test-api-key")
           .send({
-            tags: ['valid', 123, 'another-valid'],
-            localesContent: validPushData.localesContent
+            tags: ["valid", 123, "another-valid"],
+            localesContent: validPushData.localesContent,
           })
           .expect(400)
           .expect((res) => {
-            expect(res.body.error).toBe('All tags must be strings');
+            expect(res.body.error).toBe("All tags must be strings");
           });
       });
 
-      it('should validate localesContent values are strings', async () => {
+      it("should validate localesContent values are strings", async () => {
         await request(app)
-          .post('/send')
-          .set('X-API-Key', 'test-api-key')
+          .post("/send")
+          .set("X-API-Key", "test-api-key")
           .send({
-            tags: ['sports'],
+            tags: ["sports"],
             localesContent: {
-              en: { title: 123, text: 'Valid text' } // Invalid title type
-            }
+              en: { title: 123, text: "Valid text" }, // Invalid title type
+            },
           })
           .expect(400)
           .expect((res) => {
-            expect(res.body.error).toContain('title and text must be strings');
+            expect(res.body.error).toContain("title and text must be strings");
           });
       });
     });

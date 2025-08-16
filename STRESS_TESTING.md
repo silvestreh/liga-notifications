@@ -38,6 +38,7 @@ node dist/stress-test-cli.js quick
 ```
 
 This will:
+
 - Test API endpoints for 30 seconds at 50 req/s
 - Process 10,000 notifications through the queue
 - Give you a baseline performance measurement
@@ -60,16 +61,16 @@ node dist/stress-test-cli.js scenario medium
 
 ## Available Scenarios
 
-| Scenario | Description | API Load | Queue Load | Duration |
-|----------|-------------|----------|------------|----------|
-| `light` | Development testing | 10 req/s | 1k notifications | 30s |
-| `medium` | Staging testing | 50 req/s | 10k notifications | 60s |
-| `heavy` | Production planning | 200 req/s | 100k notifications | 120s |
-| `extreme` | Maximum capacity | 500 req/s | 500k notifications | 300s |
-| `burst` | Traffic spikes | 1000 req/s | 50k notifications | 30s |
-| `endurance` | Sustained load | 100 req/s | 1M notifications | 600s |
-| `queue-focused` | Queue processing | 5 req/s | 1M notifications | 10s |
-| `api-focused` | API endpoints | 1000 req/s | 1k notifications | 180s |
+| Scenario        | Description         | API Load   | Queue Load         | Duration |
+| --------------- | ------------------- | ---------- | ------------------ | -------- |
+| `light`         | Development testing | 10 req/s   | 1k notifications   | 30s      |
+| `medium`        | Staging testing     | 50 req/s   | 10k notifications  | 60s      |
+| `heavy`         | Production planning | 200 req/s  | 100k notifications | 120s     |
+| `extreme`       | Maximum capacity    | 500 req/s  | 500k notifications | 300s     |
+| `burst`         | Traffic spikes      | 1000 req/s | 50k notifications  | 30s      |
+| `endurance`     | Sustained load      | 100 req/s  | 1M notifications   | 600s     |
+| `queue-focused` | Queue processing    | 5 req/s    | 1M notifications   | 10s      |
+| `api-focused`   | API endpoints       | 1000 req/s | 1k notifications   | 180s     |
 
 ## Custom Testing
 
@@ -87,6 +88,7 @@ node dist/stress-test-cli.js api \
 ```
 
 **Parameters:**
+
 - `--duration`: Test duration in seconds
 - `--rps`: Requests per second
 - `--concurrency`: Concurrent requests
@@ -105,6 +107,7 @@ node dist/stress-test-cli.js queue \
 ```
 
 **Parameters:**
+
 - `--size`: Number of notifications to process
 - `--batch-size`: Batch size for processing
 - `--concurrency`: Worker concurrency
@@ -166,11 +169,13 @@ export CONCURRENCY="10"
 ### APNs Mocking
 
 The stress tests **do not hit real APNs servers** to avoid:
+
 - Getting banned from APNs
 - Incurring charges
 - Sending real notifications to test devices
 
 Instead, they simulate:
+
 - APNs processing time (10-50ms per batch)
 - Invalid token detection (1-5% of tokens)
 - Database cleanup operations
@@ -178,6 +183,7 @@ Instead, they simulate:
 ### Resource Limits
 
 Built-in safeguards prevent:
+
 - Excessive concurrency (>100 workers)
 - Unreasonable request rates (>10,000 req/s)
 - Resource exhaustion
@@ -212,6 +218,7 @@ export NODE_ENV=development
 ### Monitoring
 
 Monitor these metrics during testing:
+
 - CPU usage
 - Memory consumption
 - Network I/O
@@ -237,6 +244,7 @@ Monitor these metrics during testing:
 ### Performance Targets
 
 Typical targets for a production notifications API:
+
 - **API Response Time**: P95 < 200ms, P99 < 500ms
 - **API Throughput**: 500-1000 req/s sustained
 - **Queue Processing**: 10,000+ notifications/second
@@ -280,6 +288,7 @@ node dist/stress-test-cli.js full --duration 600 --rps 300 --size 500000
 ## Support
 
 For issues or questions:
+
 1. Check the troubleshooting section
 2. Review error logs and metrics
 3. Adjust test parameters

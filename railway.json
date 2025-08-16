@@ -1,0 +1,22 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "nixpacks"
+  },
+  "deploy": {
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 300,
+    "restartPolicyType": "on_failure"
+  },
+  "services": [
+    {
+      "name": "api",
+      "startCommand": "npm run start:api",
+      "healthcheckPath": "/health"
+    },
+    {
+      "name": "worker",
+      "startCommand": "npm run start:worker"
+    }
+  ]
+}
