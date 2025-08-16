@@ -16,18 +16,25 @@
     "test": "jest --detectOpenHandles",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:verbose": "jest --verbose"
+    "test:verbose": "jest --verbose",
+    "stress:quick": "npm run build && node dist/stress-test-cli.js quick",
+    "stress:scenarios": "npm run build && node dist/stress-test-cli.js scenarios",
+    "stress:api": "npm run build && node dist/stress-test-cli.js api",
+    "stress:queue": "npm run build && node dist/stress-test-cli.js queue",
+    "stress:full": "npm run build && node dist/stress-test-cli.js full"
   },
   "dependencies": {
     "apn": "^2.2.0",
+    "axios": "^1.11.0",
     "bullmq": "^5.57.0",
+    "commander": "^14.0.0",
+    "concurrently": "^8.2.2",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "ioredis": "^5.7.0",
     "jsonwebtoken": "^9.0.0",
     "mongoose": "^8.17.1",
-    "p-limit": "^7.0.0",
-    "concurrently": "^8.2.2"
+    "p-limit": "^7.0.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
