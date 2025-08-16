@@ -21,7 +21,10 @@ export default {
     '!**/node_modules/**',
     '!**/dist/**',
     '!**/tests/**',
-    '!jest.config.js'
+    '!jest.config.js',
+    '!index.ts',
+    '!workers.ts',
+    '!apns.ts'
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
