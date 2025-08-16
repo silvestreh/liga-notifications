@@ -7,7 +7,6 @@ export async function getTokensByTags(tags: string[]): Promise<IToken[]> {
     }
 
     const tokens = await Token.find({ tags: { $in: tags } });
-    console.log(`Found ${tokens.length} tokens for tags:`, tags);
     return tokens;
   } catch (error) {
     console.error("Error fetching tokens by tags:", error);
@@ -26,7 +25,6 @@ export function groupTokensByLocale(
     const grouped: Record<string, string[]> = {};
     tokens.forEach((t) => {
       if (!t || !t.token) {
-        console.warn("Invalid token object found, skipping:", t);
         return;
       }
 
@@ -34,13 +32,6 @@ export function groupTokensByLocale(
       if (!grouped[lang]) grouped[lang] = [];
       grouped[lang].push(t.token);
     });
-
-    console.log(
-      "Tokens grouped by locale:",
-      Object.keys(grouped).map(
-        (locale) => `${locale}: ${grouped[locale].length}`,
-      ),
-    );
 
     return grouped;
   } catch (error) {
@@ -76,7 +67,6 @@ export function generatePayload(
 export async function removeInvalidTokens(tokens: string[]): Promise<void> {
   try {
     if (!tokens || tokens.length === 0) {
-      console.log("No invalid tokens to remove");
       return;
     }
 
@@ -87,19 +77,12 @@ export async function removeInvalidTokens(tokens: string[]): Promise<void> {
     const validTokens = tokens.filter(
       (token) => typeof token === "string" && token.length > 0,
     );
-    if (validTokens.length !== tokens.length) {
-      console.warn(
-        `Filtered out ${tokens.length - validTokens.length} invalid token entries`,
-      );
-    }
 
     if (validTokens.length === 0) {
-      console.log("No valid tokens to remove after filtering");
       return;
     }
 
-    const result = await Token.deleteMany({ token: { $in: validTokens } });
-    console.log(`Removed ${result.deletedCount} invalid tokens from database`);
+    await Token.deleteMany({ token: { $in: validTokens } });
   } catch (error) {
     console.error("Error removing invalid tokens:", error);
     // Don't throw here as this is cleanup - log error but continue

@@ -15,8 +15,6 @@ const worker = new Worker(
   "pushQueue",
   async (job) => {
     try {
-      console.log(`Processing job ${job.id} - started`);
-
       const { tokens, payload } = job.data as {
         tokens: string[];
         payload: { title: string; text: string };
@@ -31,15 +29,6 @@ const worker = new Worker(
         throw new Error("Job data must contain payload with title and text");
       }
 
-      console.log(`Processing ${tokens.length} tokens with payload:`, {
-        title:
-          payload.title.substring(0, 50) +
-          (payload.title.length > 50 ? "..." : ""),
-        text:
-          payload.text.substring(0, 50) +
-          (payload.text.length > 50 ? "..." : ""),
-      });
-
       const invalidTokensTotal: string[] = [];
       let successfulBatches = 0;
       let failedBatches = 0;
@@ -53,10 +42,6 @@ const worker = new Worker(
           );
           invalidTokensTotal.push(...invalidTokens);
           successfulBatches++;
-
-          console.log(
-            `Batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(tokens.length / batchSize)} completed - ${invalidTokens.length} invalid tokens found`,
-          );
         } catch (batchError) {
           failedBatches++;
           console.error(
@@ -76,8 +61,6 @@ const worker = new Worker(
         failedBatches,
         invalidTokens: invalidTokensTotal.length,
       };
-
-      console.log(`Job ${job.id} completed:`, summary);
 
       // If all batches failed, throw an error
       if (failedBatches > 0 && successfulBatches === 0) {
@@ -99,7 +82,7 @@ const worker = new Worker(
 );
 
 worker.on("completed", (job, returnValue) => {
-  console.log(`✅ Job ${job.id} completed successfully:`, returnValue);
+  // Job completed successfully - no logging to prevent bottlenecks
 });
 
 worker.on("failed", (job, err) => {

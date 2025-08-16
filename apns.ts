@@ -69,8 +69,6 @@ export async function sendAPNsBatch(
     note.sound = "default";
     note.badge = 1;
 
-    console.log(`Sending APNs batch to ${tokens.length} devices`);
-
     const results = await Promise.all(
       tokens.map(async (token, index) => {
         try {
@@ -99,13 +97,6 @@ export async function sendAPNsBatch(
           // 403 = InvalidProviderToken / other auth issues
           if (fail.status === "410" || fail.status === "400") {
             invalidTokens.push(tokens[i]);
-            console.log(
-              `Invalid token detected (${fail.status}${reason ? ` - ${reason}` : ""}): ${tokens[i]}`,
-            );
-          } else {
-            console.warn(
-              `APNs delivery failed for token ${tokens[i]} with status ${fail.status}${reason ? ` - ${reason}` : ""}`,
-            );
           }
         });
       } else {
@@ -113,9 +104,6 @@ export async function sendAPNsBatch(
       }
     });
 
-    console.log(
-      `APNs batch completed: ${successCount} successful, ${invalidTokens.length} invalid tokens`,
-    );
     return invalidTokens;
   } catch (error) {
     console.error("Error in sendAPNsBatch:", error);
