@@ -1,26 +1,31 @@
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+dotenv.config();
 
 let mongod: MongoMemoryServer;
 
 // Setup before all tests
 beforeAll(async () => {
-  // Start in-memory MongoDB instance
-  mongod = await MongoMemoryServer.create();
-  const uri = mongod.getUri();
-
-  // Connect mongoose to the in-memory database
-  await mongoose.connect(uri);
+  if (process.env.TEST_REAL_DB === 'true' && process.env.MONGO_URI) {
+    console.log('🔗 Connecting to real MongoDB instance for tests');
+    await mongoose.connect(process.env.MONGO_URI);
+  } else {
+    // Start in-memory MongoDB instance
+    mongod = await MongoMemoryServer.create();
+    const uri = mongod.getUri();
+    await mongoose.connect(uri);
+  }
 });
 
 // Cleanup after all tests
 afterAll(async () => {
-  // Close mongoose connection
   await mongoose.connection.dropDatabase();
   await mongoose.connection.close();
 
-  // Stop in-memory MongoDB instance
-  await mongod.stop();
+  if (mongod) {
+    await mongod.stop();
+  }
 });
 
 // Clear database between tests

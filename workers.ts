@@ -3,6 +3,10 @@ import { connection } from "./queue.js";
 import { sendAPNsBatch } from "./apns.js";
 import { removeInvalidTokens } from "./helpers.js";
 import pLimit from "p-limit";
+import dotenv from "dotenv";
+import mongoose from "mongoose";
+dotenv.config();
+await mongoose.connect(process.env.MONGO_URL!);
 
 const limit = pLimit(5);
 const batchSize = 100;
@@ -110,12 +114,14 @@ worker.on("error", (err) => {
 process.on("SIGTERM", async () => {
   console.log("SIGTERM received, shutting down worker gracefully...");
   await worker.close();
+  await mongoose.connection.close();
   process.exit(0);
 });
 
 process.on("SIGINT", async () => {
   console.log("SIGINT received, shutting down worker gracefully...");
   await worker.close();
+  await mongoose.connection.close();
   process.exit(0);
 });
 

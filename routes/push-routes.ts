@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import { pushQueue } from "../queue.js";
+import { authenticateApiKey } from '../middleware/auth.js';
 import {
   getTokensByTags,
   groupTokensByLocale,
@@ -9,7 +10,7 @@ import {
 const router = Router();
 
 // Send push notification endpoint (requires authentication)
-router.post("/send-push", async (req: Request, res: Response) => {
+router.post("/send", authenticateApiKey, async (req: Request, res: Response) => {
   try {
     const { tags, localesContent } = req.body as {
       tags: string[];

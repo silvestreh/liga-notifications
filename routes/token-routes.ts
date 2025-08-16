@@ -1,5 +1,4 @@
 import { Router, Request, Response } from "express";
-import { authenticateApiKey } from "../middleware/auth.js";
 import jwt from "jsonwebtoken";
 import { authenticateDevice } from "../middleware/device-auth.js";
 
@@ -91,7 +90,7 @@ router.post("/register", async (req: Request, res: Response) => {
 });
 
 // Get device token info endpoint (requires authentication)
-router.get("/token/:tokenId", authenticateApiKey, async (req: Request, res: Response) => {
+router.get("/token/:tokenId", authenticateDevice, async (req: Request, res: Response) => {
   try {
     const { tokenId } = req.params;
 

@@ -40,7 +40,8 @@ export const apnProvider = new apn.Provider({
     keyId: process.env.APN_KEY_ID!,
     teamId: process.env.APN_TEAM_ID!,
   },
-  production: process.env.NODE_ENV === "production",
+  // Use explicit flag so NODE_ENV doesn’t accidentally point to prod endpoint
+  production: process.env.APN_PRODUCTION === "true",
 });
 
 export async function sendAPNsBatch(
@@ -92,17 +93,18 @@ export async function sendAPNsBatch(
     results.forEach((res, i) => {
       if (res.failed && res.failed.length > 0) {
         res.failed.forEach((fail) => {
+          const reason = (fail as any)?.response?.reason;
           // 410 = Gone (token no longer valid)
-          // 400 = Bad Request (malformed token)
-          // 403 = Forbidden (certificate/auth issues)
+          // 400 = BadDeviceToken / BadRequest (malformed token)
+          // 403 = InvalidProviderToken / other auth issues
           if (fail.status === "410" || fail.status === "400") {
             invalidTokens.push(tokens[i]);
             console.log(
-              `Invalid token detected (${fail.status}): ${tokens[i]}`,
+              `Invalid token detected (${fail.status}${reason ? ` - ${reason}` : ""}): ${tokens[i]}`,
             );
           } else {
             console.warn(
-              `APNs delivery failed for token ${tokens[i]} with status ${fail.status}`,
+              `APNs delivery failed for token ${tokens[i]} with status ${fail.status}${reason ? ` - ${reason}` : ""}`,
             );
           }
         });

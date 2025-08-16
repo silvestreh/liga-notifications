@@ -3,13 +3,12 @@ import IORedis from "ioredis";
 import dotenv from "dotenv";
 dotenv.config();
 
-const redisURL = new URL(process.env.REDIS_URL!);
-
-export const connection = new IORedis(`${redisURL}?family=0`);
+const redisURLString = process.env.REDIS_URL!;
+export const connection = new IORedis(redisURLString, { family: 0, maxRetriesPerRequest: null });
 
 // Redis connection event logging
 connection.on("connect", () => {
-  console.log(`📡 Redis: attempting connection to ${redisURL}`);
+  console.log(`📡 Redis: attempting connection to ${redisURLString}`);
 });
 
 connection.on("ready", () => {
@@ -24,12 +23,4 @@ connection.on("reconnecting", () => {
   console.warn("🔄 Redis: reconnecting...");
 });
 
-export const pushQueue = new Queue("pushQueue", {
-  connection: {
-    family: 0,
-    host: redisURL.hostname,
-    port: parseInt(redisURL.port, 10),
-    username: redisURL.username,
-    password: redisURL.password
-  }
-});
+export const pushQueue = new Queue("pushQueue", { connection });
