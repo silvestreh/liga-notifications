@@ -90,8 +90,8 @@ router.post("/register", async (req: Request, res: Response) => {
   }
 });
 
-// Get device token info endpoint (requires API key authentication)
-router.get("/token/:tokenId", authenticateApiKey, async (req: Request, res: Response) => {
+// Get device token info endpoint (requires device authentication)
+router.get("/token/:tokenId", authenticateDevice, async (req: Request, res: Response) => {
   try {
     const { tokenId } = req.params;
 

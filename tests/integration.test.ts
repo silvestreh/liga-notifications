@@ -1,6 +1,7 @@
 import request from 'supertest';
 import express from 'express';
 import mongoose from 'mongoose';
+import jwt from 'jsonwebtoken';
 import { authenticateApiKey } from '../middleware/auth';
 import tokenRoutes from '../routes/token-routes';
 import pushRoutes from '../routes/push-routes';
@@ -127,9 +128,14 @@ describe('Integration Tests', () => {
       expect(newsResponse.body.totalUsers).toBe(3);
 
       // Step 5: Look up device info
+      const deviceSecret = process.env.DEVICE_SECRET || 'test-device-secret';
+      const deviceAuthToken = jwt.sign({ token: 'device-1-token' }, deviceSecret, {
+        expiresIn: '365d'
+      });
+
       const lookupResponse = await request(app)
         .get('/token/device-1-token')
-        .set('X-API-Key', 'test-api-key')
+        .set('X-Device-Auth', deviceAuthToken)
         .expect(200);
 
       expect(lookupResponse.body.token).toMatchObject({
@@ -253,10 +259,15 @@ describe('Integration Tests', () => {
         platform: 'ios'
       });
 
-      // These should work with valid API key
+      // These should work with valid device auth
+      const deviceSecret = process.env.DEVICE_SECRET || 'test-device-secret';
+      const deviceAuthToken = jwt.sign({ token: 'auth-test-token' }, deviceSecret, {
+        expiresIn: '365d'
+      });
+
       await request(app)
         .get('/token/auth-test-token')
-        .set('X-API-Key', 'test-api-key')
+        .set('X-Device-Auth', deviceAuthToken)
         .expect(200);
 
       await request(app)

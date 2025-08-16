@@ -1,5 +1,6 @@
 import request from 'supertest';
 import express from 'express';
+import jwt from 'jsonwebtoken';
 import { authenticateApiKey } from '../middleware/auth';
 import tokenRoutes from '../routes/token-routes';
 import pushRoutes from '../routes/push-routes';
@@ -141,6 +142,8 @@ describe('API Routes', () => {
     });
 
     describe('GET /token/:tokenId', () => {
+      let deviceAuthToken: string;
+
       beforeEach(async () => {
         await Token.create([
           {
@@ -150,12 +153,18 @@ describe('API Routes', () => {
             locale: 'en'
           }
         ]);
+
+        // Create device auth token for the test token
+        const deviceSecret = process.env.DEVICE_SECRET || 'test-device-secret';
+        deviceAuthToken = jwt.sign({ token: 'lookup-token-123456789012345' }, deviceSecret, {
+          expiresIn: '365d'
+        });
       });
 
       it('should return token info with valid authentication', async () => {
         const response = await request(app)
           .get('/token/lookup-token-123456789012345')
-          .set('X-API-Key', 'test-api-key')
+          .set('X-Device-Auth', deviceAuthToken)
           .expect(200);
 
         expect(response.body.token).toMatchObject({
@@ -171,14 +180,14 @@ describe('API Routes', () => {
           .get('/token/lookup-token-123456789012345')
           .expect(401)
           .expect((res) => {
-            expect(res.body.error).toContain('Invalid or missing API key');
+            expect(res.body.error).toContain('Missing device auth token');
           });
       });
 
       it('should return 404 for non-existent token', async () => {
         await request(app)
           .get('/token/nonexistent-token')
-          .set('X-API-Key', 'test-api-key')
+          .set('X-Device-Auth', deviceAuthToken)
           .expect(404)
           .expect((res) => {
             expect(res.body.error).toBe('Token not found');
@@ -188,7 +197,7 @@ describe('API Routes', () => {
       it('should validate tokenId length', async () => {
         await request(app)
           .get('/token/short')
-          .set('X-API-Key', 'test-api-key')
+          .set('X-Device-Auth', deviceAuthToken)
           .expect(400)
           .expect((res) => {
             expect(res.body.error).toContain('tokenId must be at least 10 characters');

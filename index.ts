@@ -1,7 +1,7 @@
 import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import { pushQueue } from "./queue.js";
+import { pushQueue, connection as redisConnection } from "./queue.js";
 import { authenticateApiKey } from "./middleware/auth.js";
 import pushRoutes from "./routes/push-routes.js";
 import tokenRoutes from "./routes/token-routes.js";
@@ -36,18 +36,84 @@ mongoose
   .connect(process.env.MONGO_URL!)
   .catch(console.error);
 
+// Health check endpoint (no auth required) - MUST be before routes
+app.get("/health", async (req, res) => {
+  const health = {
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    services: {
+      mongodb: { status: "unknown", latency: null as number | null },
+      redis: { status: "unknown", latency: null as number | null },
+      queue: { status: "unknown", jobs: null as any }
+    }
+  };
+
+  let overallHealthy = true;
+
+  try {
+    // Check MongoDB connection
+    const mongoStart = Date.now();
+    if (!mongoose.connection.db) {
+      throw new Error("MongoDB not connected");
+    }
+    await mongoose.connection.db.admin().ping();
+    health.services.mongodb = {
+      status: "healthy",
+      latency: Date.now() - mongoStart
+    };
+  } catch (error) {
+    health.services.mongodb = {
+      status: "unhealthy",
+      latency: null
+    };
+    overallHealthy = false;
+  }
+
+  try {
+    // Check Redis connection
+    const redisStart = Date.now();
+    await redisConnection.ping();
+    health.services.redis = {
+      status: "healthy",
+      latency: Date.now() - redisStart
+    };
+
+    // Check queue status
+    const waiting = await pushQueue.getWaiting();
+    const active = await pushQueue.getActive();
+    const completed = await pushQueue.getCompleted();
+    const failed = await pushQueue.getFailed();
+
+    health.services.queue = {
+      status: "healthy",
+      jobs: {
+        waiting: waiting.length,
+        active: active.length,
+        completed: completed.length,
+        failed: failed.length
+      }
+    };
+  } catch (error) {
+    health.services.redis = {
+      status: "unhealthy",
+      latency: null
+    };
+    health.services.queue = {
+      status: "unhealthy",
+      jobs: null
+    };
+    overallHealthy = false;
+  }
+
+  health.status = overallHealthy ? "healthy" : "unhealthy";
+
+  res.status(overallHealthy ? 200 : 503).json(health);
+});
+
 // Mount routes
 app.use("/", tokenRoutes); // Token routes (register is public, token lookup requires auth)
 app.use("/", authenticateApiKey, pushRoutes); // Push routes (all require authentication)
-
-// Health check endpoint (no auth required)
-app.get("/health", (req, res) => {
-  res.json({
-    status: "healthy",
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
-});
 
 // Root endpoint
 app.get("/", (req, res) => {
