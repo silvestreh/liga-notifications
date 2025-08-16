@@ -13,7 +13,7 @@
     "dev:worker": "tsc && nodemon dist/workers.js",
     "dev:watch": "tsc --watch",
     "clean": "rm -rf dist",
-    "test": "jest",
+    "test": "jest --detectOpenHandles",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:verbose": "jest --verbose"

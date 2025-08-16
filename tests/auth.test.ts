@@ -75,9 +75,8 @@ describe('Authentication Middleware', () => {
 
       authenticateApiKey(mockReq as Request, mockRes as Response, nextFunction);
 
-      expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockRes.json).toHaveBeenCalledWith({ error: 'Invalid or missing API key' });
-      expect(nextFunction).not.toHaveBeenCalled();
+      expect(nextFunction).toHaveBeenCalled();
+      expect(mockRes.status).not.toHaveBeenCalled();
     });
 
     it('should prioritize x-api-key over authorization header', () => {

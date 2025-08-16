@@ -207,7 +207,7 @@ describe('API Routes', () => {
       ]);
     });
 
-    describe('POST /send-push', () => {
+    describe('POST /send', () => {
       const validPushData = {
         tags: ['sports'],
         localesContent: {
@@ -218,7 +218,7 @@ describe('API Routes', () => {
 
       it('should queue push notifications with valid authentication', async () => {
         const response = await request(app)
-          .post('/send-push')
+          .post('/send')
           .set('X-API-Key', 'test-api-key')
           .send(validPushData)
           .expect(200);
@@ -233,7 +233,7 @@ describe('API Routes', () => {
 
       it('should require authentication', async () => {
         await request(app)
-          .post('/send-push')
+          .post('/send')
           .send(validPushData)
           .expect(401)
           .expect((res) => {
@@ -243,7 +243,7 @@ describe('API Routes', () => {
 
       it('should validate tags field', async () => {
         await request(app)
-          .post('/send-push')
+          .post('/send')
           .set('X-API-Key', 'test-api-key')
           .send({ ...validPushData, tags: [] })
           .expect(400)
@@ -254,7 +254,7 @@ describe('API Routes', () => {
 
       it('should validate localesContent field', async () => {
         await request(app)
-          .post('/send-push')
+          .post('/send')
           .set('X-API-Key', 'test-api-key')
           .send({ ...validPushData, localesContent: null })
           .expect(400)
@@ -273,7 +273,7 @@ describe('API Routes', () => {
         };
 
         await request(app)
-          .post('/send-push')
+          .post('/send')
           .set('X-API-Key', 'test-api-key')
           .send(invalidContent)
           .expect(400)
@@ -284,7 +284,7 @@ describe('API Routes', () => {
 
       it('should handle no matching devices gracefully', async () => {
         const response = await request(app)
-          .post('/send-push')
+          .post('/send')
           .set('X-API-Key', 'test-api-key')
           .send({
             tags: ['nonexistent'],
@@ -300,7 +300,7 @@ describe('API Routes', () => {
 
       it('should validate that tags are strings', async () => {
         await request(app)
-          .post('/send-push')
+          .post('/send')
           .set('X-API-Key', 'test-api-key')
           .send({
             tags: ['valid', 123, 'another-valid'],
@@ -314,7 +314,7 @@ describe('API Routes', () => {
 
       it('should validate localesContent values are strings', async () => {
         await request(app)
-          .post('/send-push')
+          .post('/send')
           .set('X-API-Key', 'test-api-key')
           .send({
             tags: ['sports'],

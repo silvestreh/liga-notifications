@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { authenticateDevice } from "../middleware/device-auth.js";
+import { authenticateApiKey } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -89,8 +90,8 @@ router.post("/register", async (req: Request, res: Response) => {
   }
 });
 
-// Get device token info endpoint (requires authentication)
-router.get("/token/:tokenId", authenticateDevice, async (req: Request, res: Response) => {
+// Get device token info endpoint (requires API key authentication)
+router.get("/token/:tokenId", authenticateApiKey, async (req: Request, res: Response) => {
   try {
     const { tokenId } = req.params;
 
@@ -165,12 +166,19 @@ router.patch("/token", authenticateDevice, async (req: Request, res: Response) =
 
     const Token = (await import("../models/token.js")).default;
 
+    // First, remove tags if needed
+    if (tagsToRemove && tagsToRemove.length > 0) {
+      await Token.findOneAndUpdate(
+        { token: deviceToken },
+        { $pullAll: { tags: tagsToRemove }, lastActive: new Date() },
+        { runValidators: true }
+      );
+    }
+
+    // Then, add tags if needed and get the final result
     const updateOps: Record<string, unknown> = { lastActive: new Date() };
     if (tagsToAdd && tagsToAdd.length > 0) {
       updateOps["$addToSet"] = { tags: { $each: tagsToAdd } };
-    }
-    if (tagsToRemove && tagsToRemove.length > 0) {
-      updateOps["$pullAll"] = { tags: tagsToRemove };
     }
 
     const updatedToken = await Token.findOneAndUpdate({ token: deviceToken }, updateOps, {

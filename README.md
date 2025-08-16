@@ -4,23 +4,19 @@
 
 ```bash
 # Database Configuration
-MONGO_URL=mongodb://localhost:27017/push-notifications
-
-# Redis Configuration
-REDIS_HOST=localhost
-REDIS_PORT=6379
+MONGO_URL=mongodb://127.0.0.1:27017/pushdb
+REDIS_URL=redis://localhost:6379
 
 # Apple Push Notifications (APNs) Configuration
-APN_KEY_PATH=/path/to/your/AuthKey_XXXXXXXXXX.p8
+APN_KEY_CONTENT="<base64 representation of your .p8 AuthKey>"
 APN_KEY_ID=XXXXXXXXXX
-APN_TEAM_ID=XXXXXXXXXX
+APN_TEAM_ID=XXXXXXXXX
 APN_BUNDLE_ID=com.yourcompany.yourapp
+APN_PRODUCTION=true|false
 
 # API Security
-API_KEY=your-secret-api-key-here
-
-# Optional
-NODE_ENV=development
+API_KEY="<the key to identify the service that wants to send a push notification>"
+DEVICE_SECRET="<the key for JWT to authenticate clients so they can modify their tags>"
 ```
 
 ## API Authentication
@@ -32,11 +28,11 @@ Include your API key in requests using either:
 
 ## Send Push Notification
 
-**POST** `/send-push`
+**POST** `/send`
 
 ```json
 {
-  "tags": ["premium", "sports"],
+  "tags": ["tag 1", "tag 2"],
   "localesContent": {
     "en": {
       "title": "New Update Available!",
@@ -63,13 +59,8 @@ Include your API key in requests using either:
 
 ## Running the Services
 
-1. **Start the API server:**
+This project uses [`concurrently`](https://www.npmjs.com/package/concurrently), so to start both the API and the worker you only have to run:
 
-   ```bash
-   npm start
-   ```
-
-2. **Start the worker process:**
-   ```bash
-   npm run worker
-   ```
+```shell
+npm start
+```

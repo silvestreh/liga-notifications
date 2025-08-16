@@ -4,3 +4,4 @@ node_modules/
 *.p12
 dist/
 *.tsbuildinfo
+coverage/

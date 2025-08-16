@@ -80,7 +80,7 @@ router.post("/send", authenticateApiKey, async (req: Request, res: Response) => 
     });
 
   } catch (error) {
-    console.error("Error in /send-push:", error);
+    console.error("Error in /send:", error);
     res.status(500).json({
       error: "Internal server error",
       message: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined,

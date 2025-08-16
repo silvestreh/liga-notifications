@@ -28,7 +28,7 @@ const createTestApp = () => {
       endpoints: {
         'POST /register': 'Register device token (no auth)',
         'GET /token/:id': 'Get token info (auth required)',
-        'POST /send-push': 'Send push notifications (auth required)',
+        'POST /send': 'Send push notifications (auth required)',
         'GET /health': 'Health check (no auth)'
       }
     });
@@ -83,7 +83,7 @@ describe('Integration Tests', () => {
       };
 
       const pushResponse = await request(app)
-        .post('/send-push')
+        .post('/send')
         .set('X-API-Key', 'test-api-key')
         .send(pushData)
         .expect(200);
@@ -118,7 +118,7 @@ describe('Integration Tests', () => {
       };
 
       const newsResponse = await request(app)
-        .post('/send-push')
+        .post('/send')
         .set('X-API-Key', 'test-api-key')
         .send(newsAlert)
         .expect(200);
@@ -143,7 +143,7 @@ describe('Integration Tests', () => {
     it('should handle edge cases gracefully', async () => {
       // Test with no matching devices
       const response = await request(app)
-        .post('/send-push')
+        .post('/send')
         .set('X-API-Key', 'test-api-key')
         .send({
           tags: ['nonexistent'],
@@ -173,7 +173,7 @@ describe('Integration Tests', () => {
 
       // Send push with only English content
       const response = await request(app)
-        .post('/send-push')
+        .post('/send')
         .set('X-API-Key', 'test-api-key')
         .send({
           tags: ['test'],
@@ -203,7 +203,7 @@ describe('Integration Tests', () => {
         version: '1.0.0',
         endpoints: expect.objectContaining({
           'POST /register': 'Register device token (no auth)',
-          'POST /send-push': 'Send push notifications (auth required)'
+          'POST /send': 'Send push notifications (auth required)'
         })
       });
     });
@@ -235,7 +235,7 @@ describe('Integration Tests', () => {
     it('should protect admin endpoints with authentication', async () => {
       // These should require API key
       await request(app)
-        .post('/send-push')
+        .post('/send')
         .send({ tags: ['test'], localesContent: { en: { title: 'Test', text: 'Test' } } })
         .expect(401);
 
@@ -260,7 +260,7 @@ describe('Integration Tests', () => {
         .expect(200);
 
       await request(app)
-        .post('/send-push')
+        .post('/send')
         .set('Authorization', 'Bearer test-api-key')
         .send({
           tags: ['test'],

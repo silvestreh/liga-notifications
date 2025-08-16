@@ -1,5 +1,6 @@
 import request from 'supertest';
 import express from 'express';
+import jwt from 'jsonwebtoken';
 import tokenRoutes from '../routes/token-routes';
 import Token from '../models/token';
 
@@ -11,8 +12,9 @@ const createTestApp = () => {
   return app;
 };
 
-describe('PATCH /token/:tokenId', () => {
+describe('PATCH /token', () => {
   let app: express.Application;
+  let deviceAuthToken: string;
 
   beforeEach(async () => {
     app = createTestApp();
@@ -23,12 +25,18 @@ describe('PATCH /token/:tokenId', () => {
       tags: ['initial'],
       locale: 'en'
     });
+
+    // Create device auth token for the test token
+    const deviceSecret = process.env.DEVICE_SECRET || 'test-device-secret';
+    deviceAuthToken = jwt.sign({ token: 'patchable-token-123' }, deviceSecret, {
+      expiresIn: '365d'
+    });
   });
 
   it('should add and remove tags with valid authentication', async () => {
     const response = await request(app)
-      .patch('/token/patchable-token-123')
-      .set('X-API-Key', 'test-api-key')
+      .patch('/token')
+      .set('X-Device-Auth', deviceAuthToken)
       .send({
         tagsToAdd: ['added'],
         tagsToRemove: ['initial']
@@ -40,16 +48,16 @@ describe('PATCH /token/:tokenId', () => {
 
   it('should validate tagsToAdd type', async () => {
     await request(app)
-      .patch('/token/patchable-token-123')
-      .set('X-API-Key', 'test-api-key')
+      .patch('/token')
+      .set('X-Device-Auth', deviceAuthToken)
       .send({ tagsToAdd: 'invalid' })
       .expect(400);
   });
 
   it('should require at least one operation', async () => {
     await request(app)
-      .patch('/token/patchable-token-123')
-      .set('X-API-Key', 'test-api-key')
+      .patch('/token')
+      .set('X-Device-Auth', deviceAuthToken)
       .send({})
       .expect(400);
   });
