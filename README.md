@@ -198,6 +198,13 @@ Send push notifications to devices matching the specified tags.
       "title": "Nouvelle mise à jour disponible !",
       "text": "Découvrez les dernières fonctionnalités de notre application."
     }
+  },
+  "metadata": {
+    "category": "update",
+    "priority": "normal",
+    "deepLink": "myapp://settings/updates",
+    "imageUrl": "https://example.com/update-image.jpg",
+    "customData": "any-json-serializable-data"
   }
 }
 ```

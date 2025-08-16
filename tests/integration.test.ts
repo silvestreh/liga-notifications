@@ -112,6 +112,12 @@ describe("Integration Tests", () => {
             text: "Votre équipe préférée joue maintenant!",
           },
         },
+        metadata: {
+          category: "sports",
+          matchId: "12345",
+          deepLink: "myapp://match/12345",
+          priority: "high"
+        }
       };
 
       const pushResponse = await request(app)

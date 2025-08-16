@@ -1,19 +1,25 @@
 import { Router, Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import { authenticateDevice } from "../middleware/device-auth.js";
-import { authenticateApiKey } from "../middleware/auth.js";
+import { authenticateDevice } from "../middleware/device-auth";
+import TokenModel from "../models/token";
 
 const router = Router();
 
 // Register/Update device token endpoint (NO authentication required)
 router.post("/register", async (req: Request, res: Response) => {
   try {
-    const { token, platform, tags, locale } = req.body as {
+    const { token, platform, tags, locale, previousToken } = req.body as {
       token: string;
       platform?: string;
       tags?: string[];
       locale?: string;
+      previousToken?: string;
     };
+
+    // if previousToken is provided, we should try to remove the token from the database
+    if (previousToken) {
+      await TokenModel.deleteOne({ token: previousToken });
+    }
 
     // Input validation
     if (!token || typeof token !== "string" || token.trim().length === 0) {

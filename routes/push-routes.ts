@@ -15,9 +15,10 @@ router.post(
   authenticateApiKey,
   async (req: Request, res: Response) => {
     try {
-      const { tags, localesContent } = req.body as {
+      const { tags, localesContent, metadata } = req.body as {
         tags: string[];
         localesContent: Record<string, { title: string; text: string }>;
+        metadata?: Record<string, any>;
       };
 
       // Input validation
@@ -70,14 +71,20 @@ router.post(
       }
 
       const groupedTokens = groupTokensByLocale(tokens);
-      const payload = generatePayload(localesContent);
+      const payload = generatePayload(localesContent, metadata);
+
+      // Debug: Log the generated payload
+      console.log('Generated payload:', JSON.stringify(payload, null, 2));
 
       let jobsAdded = 0;
       for (const [locale, tokensList] of Object.entries(groupedTokens)) {
         if (payload.locales[locale]) {
           await pushQueue.add("sendPush", {
             tokens: tokensList,
-            payload: payload.locales[locale],
+            payload: {
+              ...payload.locales[locale],
+              metadata: payload.metadata
+            },
           });
           jobsAdded++;
         }

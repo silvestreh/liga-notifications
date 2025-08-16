@@ -46,7 +46,7 @@ export const apnProvider = new apn.Provider({
 
 export async function sendAPNsBatch(
   tokens: string[],
-  payload: { title: string; text: string },
+  payload: { title: string; text: string; metadata?: Record<string, any> },
 ): Promise<string[]> {
   try {
     if (!tokens || !Array.isArray(tokens) || tokens.length === 0) {
@@ -68,6 +68,14 @@ export async function sendAPNsBatch(
     // Set additional notification properties for better delivery
     note.sound = "default";
     note.badge = 1;
+
+    // Add custom data/metadata to the notification
+    if (payload.metadata && Object.keys(payload.metadata).length > 0) {
+      note.payload = payload.metadata;
+
+      // Debug: Log the APNs payload
+      console.log('APNs payload with metadata:', JSON.stringify(note.payload, null, 2));
+    }
 
     const results = await Promise.all(
       tokens.map(async (token, index) => {

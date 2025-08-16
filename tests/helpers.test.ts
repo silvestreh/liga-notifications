@@ -110,7 +110,7 @@ describe("Helper Functions", () => {
       };
 
       const payload = generatePayload(localesContent);
-      expect(payload).toEqual({ locales: localesContent });
+      expect(payload).toEqual({ locales: localesContent, metadata: {} });
     });
 
     it("should throw error for invalid input", () => {

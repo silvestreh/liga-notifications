@@ -42,6 +42,7 @@ export function groupTokensByLocale(
 
 export function generatePayload(
   localesContent: Record<string, { title: string; text: string }>,
+  metadata?: Record<string, any>,
 ) {
   try {
     if (!localesContent || typeof localesContent !== "object") {
@@ -57,7 +58,10 @@ export function generatePayload(
       }
     }
 
-    return { locales: localesContent };
+    return {
+      locales: localesContent,
+      metadata: metadata || {}
+    };
   } catch (error) {
     console.error("Error generating payload:", error);
     throw new Error(`Failed to generate payload: ${(error as Error).message}`);

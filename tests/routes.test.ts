@@ -250,6 +250,12 @@ describe("API Routes", () => {
           en: { title: "Sports Update", text: "Your team won!" },
           es: { title: "Actualización Deportiva", text: "¡Tu equipo ganó!" },
         },
+        metadata: {
+          category: "sports",
+          priority: "high",
+          deepLink: "myapp://sports/score",
+          imageUrl: "https://example.com/sports-image.jpg"
+        }
       };
 
       it("should queue push notifications with valid authentication", async () => {

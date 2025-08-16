@@ -17,7 +17,7 @@ const worker = new Worker(
     try {
       const { tokens, payload } = job.data as {
         tokens: string[];
-        payload: { title: string; text: string };
+        payload: { title: string; text: string; metadata?: Record<string, any> };
       };
 
       // Validate job data
@@ -28,6 +28,9 @@ const worker = new Worker(
       if (!payload || !payload.title || !payload.text) {
         throw new Error("Job data must contain payload with title and text");
       }
+
+      // Debug: Log the payload being processed
+      console.log('Worker processing payload:', JSON.stringify(payload, null, 2));
 
       const invalidTokensTotal: string[] = [];
       let successfulBatches = 0;
